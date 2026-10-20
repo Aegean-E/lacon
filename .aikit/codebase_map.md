@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `16`
-- **Total Classes**: `26`
-- **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `115`
-- **Total Source Lines**: `1297`
+- **Total Python Modules**: `17`
+- **Total Classes**: `27`
+- **Total Top-Level Functions**: `25`
+- **Total Class Methods**: `114`
+- **Total Source Lines**: `1457`
 
 ---
 
@@ -79,10 +79,26 @@
 
 ---
 
+### [`lacon/code_understanding.py`](lacon/code_understanding.py)
+> *Code understanding: extract meaningful elements from source code using AST.*
+
+**Size**: `153` lines (`5177` bytes)
+
+**Classes:**
+- `class CodeElement` - *A meaningful element extracted from code.*
+
+**Functions:**
+- `def extract_code_elements(source)` - *Extract meaningful code elements from Python source.*
+- `def _func_signature(node, async_)` - *Generate a readable function signature.*
+- `def code_to_sentences(source)` - *Convert code into meaningful sentences for the engine.*
+- `def is_code_context(text)` - *Heuristic: does the text look like Python code?*
+
+---
+
 ### [`lacon/rlm.py`](lacon/rlm.py)
 > *Lacon's recursive language model: one question answered by splitting context and recurring.*
 
-**Size**: `130` lines (`5951` bytes)
+**Size**: `136` lines (`6266` bytes)
 
 **Classes:**
 - `class Answer` - *What one node concluded: its answer, its script, and the shape of the recursion below it.*
@@ -221,7 +237,7 @@
 ### [`tests/test_performance.py`](tests/test_performance.py)
 > *Performance benchmark tests: ensure speed budgets are met and measure regressions.*
 
-**Size**: `222` lines (`9176` bytes)
+**Size**: `223` lines (`9192` bytes)
 
 **Classes:**
 - `class PerformanceTests` - *Speed budgets: every operation must complete within its budget.*
@@ -234,8 +250,7 @@
   - Method `.test_full_pipeline_100_asks()` - *100 asks on 100-sentence context completes within 2s.*
 - `class CodeUnderstandingTests` - *Tests for code understanding: functions, classes, identifiers.*
   - Method `.setUp()`
-  - Method `.test_code_context_parsed()` - *Code context is split into sentences (current behavior).*
-  - Method `.test_snake_case_in_question()` - *snake_case identifiers in question produce some output.*
+  - Method `.test_code_context_parsed()` - *Code context is now parsed with AST and answers code questions.*
 - `class EdgeCaseTests` - *Edge cases and stress tests.*
   - Method `.test_very_long_context()` - *Context with 1000 sentences handled within depth cap.*
   - Method `.test_many_questions_same_context()` - *Many different questions on same context reuse cache.*
@@ -249,6 +264,9 @@
   - Method `.test_skeleton_preserves_digits()` - *skeleton preserves digits (digits kept adjacent to letters).*
   - Method `.test_content_words_filters_stopwords()` - *content_words filters common stopwords.*
   - Method `.test_lexicon_picks_shortest()` - *lexicon picks shortest spelling for same skeleton.*
+
+**Functions:**
+- `def test_snake_case_in_question(self)` - *snake_case identifiers in question are now parsed from code.*
 
 ---
 

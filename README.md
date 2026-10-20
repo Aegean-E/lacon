@@ -51,6 +51,7 @@ lacon/
 │   ├── alphabet.py           <- vowelless letter payloads and the vocabulary behind them
 │   ├── budget.py             <- the letter ceiling, its room, and the child budget
 │   ├── cli.py                <- `ask` and `demo`, exit codes 0/1/2, What/Why/Fix reports
+│   ├── code_understanding.py <- AST-based code element extraction
 │   ├── rlm.py                <- the recursive engine: split, recurse, merge, cap
 │   ├── thinker.py            <- ranks the evidence, writes the cheapest thought
 │   └── thought.py            <- the eight glyphs and the one-token script form
@@ -60,6 +61,7 @@ lacon/
     ├── test_alphabet.py
     ├── test_budget.py
     ├── test_cli.py
+    ├── test_performance.py
     ├── test_rlm.py
     ├── test_thinker.py
     └── test_thought.py

@@ -6,6 +6,8 @@ longer context is split and each part is handed to a child that is half as expen
 afforded enough letters to name a word. A parent then merges what its children said, keeping the
 one that matches the question best and marking the merge with the `=` glyph. The recursion stops at
 a depth cap, at two sentences or fewer, or wherever a thought already fits.
+
+Supports both natural language and code contexts (Python AST-based extraction).
 """
 
 from dataclasses import dataclass
@@ -15,6 +17,7 @@ from .alphabet import lexicon
 from .budget import Budget
 from .thinker import Thinker
 from .thought import MERGE, UNKNOWN, Thought, answer_text, render
+from .code_understanding import code_to_sentences, is_code_context
 
 MAX_DEPTH = 4
 CHILDREN = 2
@@ -69,13 +72,16 @@ class Lacon:
         self._evidence_cache: dict[str, tuple[str, int]] = {}  # sentence -> (payload, score)
 
     def ask(self, question: str, context: str = "", budget: int = 64) -> Answer:
-        """Answer `question` from `context`, splitting it recursively to respect `budget`."""
+        """Answer `question` from `context`, splitting it recursively to respect `budget`.
+
+        If `context` looks like Python code, uses AST-based extraction for better understanding.
+        """
         key = (question, context)
         words = self._lexicon_cache.get(key)
         if words is None:
             words = lexicon(question, context)
             self._lexicon_cache[key] = words
-        evidence = sentences(context)
+        evidence = code_to_sentences(context) if is_code_context(context) else sentences(context)
         thought_list, nodes, depth = self._solve(question, evidence, Budget(budget), 0, words)
         return Answer(answer_text(thought_list, words), render(thought_list), depth, nodes, budget)
 
