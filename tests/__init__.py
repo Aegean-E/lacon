@@ -1,0 +1,1 @@
+"""The lacon test suite: unit tests, in process, with no network and no subprocess."""
