@@ -66,6 +66,7 @@ class Lacon:
     def __init__(self, thinker: Optional[Thinker] = None) -> None:
         self.thinker = thinker if thinker is not None else Thinker()
         self._lexicon_cache: dict[tuple[str, str], dict] = {}
+        self._evidence_cache: dict[str, tuple[str, int]] = {}  # sentence -> (payload, score)
 
     def ask(self, question: str, context: str = "", budget: int = 64) -> Answer:
         """Answer `question` from `context`, splitting it recursively to respect `budget`."""
@@ -78,9 +79,21 @@ class Lacon:
         thought_list, nodes, depth = self._solve(question, evidence, Budget(budget), 0, words)
         return Answer(answer_text(thought_list, words), render(thought_list), depth, nodes, budget)
 
-    def clear_cache(self) -> None:
-        """Clear the vocabulary cache."""
-        self._lexicon_cache.clear()
+    def _prepare_evidence(self, question: str, evidence: Sequence[str]) -> list[tuple[int, str, str, int]]:
+        """Prepare evidence with cached payloads and scores: (orig_idx, sentence, payload, score)."""
+        asked = self.thinker._asked_content(question)
+        prepared = []
+        for idx, sent in enumerate(evidence):
+            cached = self._evidence_cache.get(sent)
+            if cached is not None:
+                payload, score = cached
+            else:
+                payload = self.thinker._payload(sent)
+                score = len(asked & self.thinker._content_words(sent))
+                self._evidence_cache[sent] = (payload, score)
+            prepared.append((idx, sent, payload, score))
+        prepared.sort(key=lambda item: (-item[3], item[0]))
+        return prepared
 
     def _span(self, budget: Budget) -> int:
         """How many sentences a node holds in mind: a budget-eighth, but never fewer than two."""
@@ -90,7 +103,8 @@ class Lacon:
                words) -> Tuple[List[Thought], int, int]:
         """Answer at this node: directly when the context fits in mind, by recursion when not."""
         if len(evidence) <= self._span(budget) or depth >= MAX_DEPTH or len(evidence) < 2:
-            return self.thinker.think(question, evidence, budget), 1, depth
+            prepared = self._prepare_evidence(question, evidence)
+            return self.thinker.think_prepared(prepared, budget), 1, depth
         children: List[List[Thought]] = []
         nodes, deepest = 1, depth
         for part in partition(evidence, CHILDREN):
@@ -113,3 +127,4 @@ class Lacon:
             return [Thought(UNKNOWN)]
         merged = [Thought(MERGE, "".join(str(index) for _, index, _ in scored))]
         return self.thinker.shrink(merged + list(best[2]), budget)
+

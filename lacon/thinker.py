@@ -28,18 +28,30 @@ class Evidence:
 class Thinker:
     """Turns a question and the evidence for it into thoughts that fit a letter budget."""
 
+    def _asked_content(self, question: str) -> set[str]:
+        """The set of meaning-carrying letter forms in the question."""
+        return set(content_words(question))
+
+    def _content_words(self, sentence: str) -> set[str]:
+        """The set of meaning-carrying letter forms in a sentence."""
+        return set(content_words(sentence))
+
+    def _payload(self, sentence: str) -> str:
+        """The vowelless payload for a sentence."""
+        return PAYLOAD_SEPARATOR.join(content_words(sentence))
+
     def rank(self, question: str, evidence: Sequence[str]) -> List[Evidence]:
         """Score every sentence by shared meaning and sort the best matches first."""
-        asked = set(content_words(question))
-        ranked = [Evidence(index, sentence, PAYLOAD_SEPARATOR.join(content_words(sentence)),
-                           len(asked & set(content_words(sentence))))
+        asked = self._asked_content(question)
+        ranked = [Evidence(index, sentence, self._payload(sentence),
+                           len(asked & self._content_words(sentence)))
                   for index, sentence in enumerate(evidence)]
         ranked.sort(key=lambda item: (-item.score, item.index))
         return ranked
 
     def overlap(self, question: str, text: str) -> int:
         """How many meaning-carrying letters `text` shares with `question`."""
-        return len(set(content_words(question)) & set(content_words(text)))
+        return len(self._asked_content(question) & self._content_words(text))
 
     def best(self, question: str, evidence: Sequence[str]) -> Optional[Evidence]:
         """The highest-scoring sentence that shares at least one letter form, or None."""
@@ -53,6 +65,15 @@ class Thinker:
         return self.shrink([Thought(BECAUSE, found.payload, found.index),
                             Thought(THEREFORE),
                             Thought(ANSWER, found.payload)], budget)
+
+    def think_prepared(self, prepared: list[tuple[int, str, str, int]], budget: Budget) -> List[Thought]:
+        """Think using pre-ranked evidence: list of (orig_idx, sentence, payload, score)."""
+        for orig_idx, sent, payload, score in prepared:
+            if score > 0:
+                return self.shrink([Thought(BECAUSE, payload, orig_idx),
+                                    Thought(THEREFORE),
+                                    Thought(ANSWER, payload)], budget)
+        return [Thought(UNKNOWN)]
 
     def shrink(self, thoughts: Sequence[Thought], budget: Budget) -> List[Thought]:
         """The most valuable part of `thoughts` that fits: answer words first, support after them."""

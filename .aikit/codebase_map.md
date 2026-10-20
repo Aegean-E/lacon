@@ -9,8 +9,8 @@
 - **Total Python Modules**: `15`
 - **Total Classes**: `23`
 - **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `89`
-- **Total Source Lines**: `1039`
+- **Total Class Methods**: `93`
+- **Total Source Lines**: `1075`
 
 ---
 
@@ -82,7 +82,7 @@
 ### [`lacon/rlm.py`](lacon/rlm.py)
 > *Lacon's recursive language model: one question answered by splitting context and recurring.*
 
-**Size**: `115` lines (`5098` bytes)
+**Size**: `130` lines (`5951` bytes)
 
 **Classes:**
 - `class Answer` - *What one node concluded: its answer, its script, and the shape of the recursion below it.*
@@ -90,7 +90,7 @@
 - `class Lacon` - *The engine: `ask` answers one question from a context, recurring as the budget demands.*
   - Method `.__init__(thinker)`
   - Method `.ask(question, context, budget)` - *Answer `question` from `context`, splitting it recursively to respect `budget`.*
-  - Method `.clear_cache()` - *Clear the vocabulary cache.*
+  - Method `._prepare_evidence(question, evidence)` - *Prepare evidence with cached payloads and scores: (orig_idx, sentence, payload, score).*
   - Method `._span(budget)` - *How many sentences a node holds in mind: a budget-eighth, but never fewer than two.*
   - Method `._solve(question, evidence, budget, depth, words)` - *Answer at this node: directly when the context fits in mind, by recursion when not.*
   - Method `._merge(question, children, budget, words)` - *Copy the child that answers best, marked as a merge of the children that produced it.*
@@ -104,15 +104,19 @@
 ### [`lacon/thinker.py`](lacon/thinker.py)
 > *The thinking steps: ranking evidence, then writing the cheapest thought that answers with it.*
 
-**Size**: `71` lines (`3627` bytes)
+**Size**: `92` lines (`4631` bytes)
 
 **Classes:**
 - `class Evidence` - *One sentence of context: its position, the payload it offers and the score it earned.*
 - `class Thinker` - *Turns a question and the evidence for it into thoughts that fit a letter budget.*
+  - Method `._asked_content(question)` - *The set of meaning-carrying letter forms in the question.*
+  - Method `._content_words(sentence)` - *The set of meaning-carrying letter forms in a sentence.*
+  - Method `._payload(sentence)` - *The vowelless payload for a sentence.*
   - Method `.rank(question, evidence)` - *Score every sentence by shared meaning and sort the best matches first.*
   - Method `.overlap(question, text)` - *How many meaning-carrying letters `text` shares with `question`.*
   - Method `.best(question, evidence)` - *The highest-scoring sentence that shares at least one letter form, or None.*
   - Method `.think(question, evidence, budget)` - *The cheapest thoughts that answer: the evidence, the step it supports, and the answer.*
+  - Method `.think_prepared(prepared, budget)` - *Think using pre-ranked evidence: list of (orig_idx, sentence, payload, score).*
   - Method `.shrink(thoughts, budget)` - *The most valuable part of `thoughts` that fits: answer words first, support after them.*
 
 ---
