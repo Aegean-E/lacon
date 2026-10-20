@@ -347,25 +347,49 @@ class Lacon:
             visit(answer.tree)
         return "\n".join(lines)
 
-    def export_tree_text(self, answer: Answer) -> str:
-        """Export the recursion tree as a human-readable text tree."""
+    def export_tree_text(self, answer: Answer, use_ascii: bool = True) -> str:
+        """Export the recursion tree as a human-readable text tree.
+        
+        Args:
+            answer: The Answer with a tree
+            use_ascii: If True, use ASCII characters instead of Unicode box-drawing
+        """
         if not answer.tree:
             return "(no tree)"
 
         lines = []
+        if use_ascii:
+            # ASCII-only tree characters
+            branch_last = "`-- "
+            branch_mid = "|-- "
+            indent_last = "    "
+            indent_mid = "|   "
+            prefix_last = "   "
+            prefix_mid = "|  "
+        else:
+            # Unicode box-drawing characters
+            branch_last = "`-- "
+            branch_mid = "|-- "
+            indent_last = "    "
+            indent_mid = "|   "
+
+        lines = []
 
         def visit(node: TreeNode, prefix: str = "", is_last: bool = True):
-            status = "✓" if node.known else "?"
+            status = "+" if node.known else "?"
             budget_info = f"budget={node.budget}, span={node.span}, evid={node.evidence_count}"
-            lines.append(f"{prefix}{'└── ' if is_last else '├── '}Node {node.node_id} (depth {node.depth}) {status} [{budget_info}] script_len={len(node.script)}")
+            branch = branch_last if is_last else branch_mid
+            lines.append(f"{prefix}{branch}Node {node.node_id} (depth {node.depth}) {status} [{budget_info}] script_len={len(node.script)}")
             if node.script:
-                # Truncate script for display
                 display_script = node.script[:80] + ("..." if len(node.script) > 80 else "")
-                lines.append(f"{prefix}{'    ' if is_last else '│   '}  └─ {display_script}")
-            child_prefix = prefix + ("    " if is_last else "│   ")
+                indent = indent_last if is_last else indent_mid
+                lines.append(f"{prefix}{indent}  `-- {display_script}")
+            child_prefix = prefix + (indent_last if is_last else indent_mid)
             for i, child in enumerate(node.children):
                 visit(child, child_prefix, i == len(node.children) - 1)
 
+        if not answer.tree:
+            return "(no tree)"
         visit(answer.tree)
         return "\n".join(lines)
 

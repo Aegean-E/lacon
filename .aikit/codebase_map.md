@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `18`
+- **Total Python Modules**: `19`
 - **Total Classes**: `28`
 - **Total Top-Level Functions**: `33`
 - **Total Class Methods**: `116`
-- **Total Source Lines**: `1830`
+- **Total Source Lines**: `1876`
 
 ---
 
@@ -98,7 +98,7 @@
 ### [`lacon/rlm.py`](lacon/rlm.py)
 > *Lacon's recursive language model: one question answered by splitting context and recurring.*
 
-**Size**: `439` lines (`16062` bytes)
+**Size**: `463` lines (`16789` bytes)
 
 **Classes:**
 - `class TreeNode` - *A node in the recursion tree for trajectory tracking.*
@@ -112,7 +112,7 @@
   - Method `._solve(question, evidence, budget, depth, words, tree_chars_limit, parent_id)` - *Answer at this node: directly when the context fits in mind, by recursion when not.*
   - Method `._merge(question, children, budget, asked)` - *Copy the child that answers best, marked as a merge of the children that produced it.*
   - Method `.export_tree_json(answer)` - *Export the recursion tree as JSONL (one line per node).*
-  - Method `.export_tree_text(answer)` - *Export the recursion tree as a human-readable text tree.*
+  - Method `.export_tree_text(answer, use_ascii)` - *Export the recursion tree as a human-readable text tree.*
 
 **Functions:**
 - `def sentences(text)` - *The sentences of a context: one per line or sentence mark, blanks dropped.*
@@ -170,6 +170,11 @@
 - `def test_rlm()`
 - `def test_integration()`
 - `def test_budget_ladder()`
+
+---
+
+### [`test_features.py`](test_features.py)
+**Size**: `22` lines (`900` bytes)
 
 ---
 
