@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `18`
-- **Total Classes**: `27`
-- **Total Top-Level Functions**: `30`
-- **Total Class Methods**: `114`
-- **Total Source Lines**: `1528`
+- **Total Classes**: `28`
+- **Total Top-Level Functions**: `33`
+- **Total Class Methods**: `116`
+- **Total Source Lines**: `1830`
 
 ---
 
@@ -98,22 +98,28 @@
 ### [`lacon/rlm.py`](lacon/rlm.py)
 > *Lacon's recursive language model: one question answered by splitting context and recurring.*
 
-**Size**: `137` lines (`6359` bytes)
+**Size**: `439` lines (`16062` bytes)
 
 **Classes:**
+- `class TreeNode` - *A node in the recursion tree for trajectory tracking.*
 - `class Answer` - *What one node concluded: its answer, its script, and the shape of the recursion below it.*
   - Property `.known` - *Whether Lacon found evidence that answers, rather than saying unknown.*
 - `class Lacon` - *The engine: `ask` answers one question from a context, recurring as the budget demands.*
-  - Method `.__init__(thinker)`
-  - Method `.ask(question, context, budget)` - *Answer `question` from `context`, splitting it recursively to respect `budget`.*
+  - Method `.__init__(thinker, *, max_total_chars)`
+  - Method `.ask(question, context, budget, *, max_total_chars)` - *Answer `question` from `context`, splitting it recursively to respect `budget`.*
   - Method `._prepare_evidence(question, evidence)` - *Prepare evidence with cached payloads and fresh scores: (orig_idx, sentence, payload, score).*
   - Method `._span(budget)` - *How many sentences a node holds in mind: a budget-eighth, but never fewer than two.*
-  - Method `._solve(question, evidence, budget, depth, words)` - *Answer at this node: directly when the context fits in mind, by recursion when not.*
-  - Method `._merge(question, children, budget, words)` - *Copy the child that answers best, marked as a merge of the children that produced it.*
+  - Method `._solve(question, evidence, budget, depth, words, tree_chars_limit, parent_id)` - *Answer at this node: directly when the context fits in mind, by recursion when not.*
+  - Method `._merge(question, children, budget, asked)` - *Copy the child that answers best, marked as a merge of the children that produced it.*
+  - Method `.export_tree_json(answer)` - *Export the recursion tree as JSONL (one line per node).*
+  - Method `.export_tree_text(answer)` - *Export the recursion tree as a human-readable text tree.*
 
 **Functions:**
 - `def sentences(text)` - *The sentences of a context: one per line or sentence mark, blanks dropped.*
 - `def partition(items, parts)` - *Split `items` into at most `parts` contiguous chunks, as evenly as the length allows.*
+- `def parse_csv(text)` - *Parse CSV text into sentences (one per row).*
+- `def parse_json(text)` - *Parse JSON text into sentences (extract string values).*
+- `def parse_context(text, format)` - *Parse context text based on format.*
 
 ---
 
