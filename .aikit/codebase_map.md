@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `17`
+- **Total Python Modules**: `18`
 - **Total Classes**: `27`
-- **Total Top-Level Functions**: `25`
+- **Total Top-Level Functions**: `30`
 - **Total Class Methods**: `114`
-- **Total Source Lines**: `1457`
+- **Total Source Lines**: `1528`
 
 ---
 
@@ -98,7 +98,7 @@
 ### [`lacon/rlm.py`](lacon/rlm.py)
 > *Lacon's recursive language model: one question answered by splitting context and recurring.*
 
-**Size**: `136` lines (`6266` bytes)
+**Size**: `137` lines (`6359` bytes)
 
 **Classes:**
 - `class Answer` - *What one node concluded: its answer, its script, and the shape of the recursion below it.*
@@ -106,7 +106,7 @@
 - `class Lacon` - *The engine: `ask` answers one question from a context, recurring as the budget demands.*
   - Method `.__init__(thinker)`
   - Method `.ask(question, context, budget)` - *Answer `question` from `context`, splitting it recursively to respect `budget`.*
-  - Method `._prepare_evidence(question, evidence)` - *Prepare evidence with cached payloads and scores: (orig_idx, sentence, payload, score).*
+  - Method `._prepare_evidence(question, evidence)` - *Prepare evidence with cached payloads and fresh scores: (orig_idx, sentence, payload, score).*
   - Method `._span(budget)` - *How many sentences a node holds in mind: a budget-eighth, but never fewer than two.*
   - Method `._solve(question, evidence, budget, depth, words)` - *Answer at this node: directly when the context fits in mind, by recursion when not.*
   - Method `._merge(question, children, budget, words)` - *Copy the child that answers best, marked as a merge of the children that produced it.*
@@ -120,7 +120,7 @@
 ### [`lacon/thinker.py`](lacon/thinker.py)
 > *The thinking steps: ranking evidence, then writing the cheapest thought that answers with it.*
 
-**Size**: `92` lines (`4631` bytes)
+**Size**: `107` lines (`5400` bytes)
 
 **Classes:**
 - `class Evidence` - *One sentence of context: its position, the payload it offers and the score it earned.*
@@ -132,8 +132,8 @@
   - Method `.overlap(question, text)` - *How many meaning-carrying letters `text` shares with `question`.*
   - Method `.best(question, evidence)` - *The highest-scoring sentence that shares at least one letter form, or None.*
   - Method `.think(question, evidence, budget)` - *The cheapest thoughts that answer: the evidence, the step it supports, and the answer.*
-  - Method `.think_prepared(prepared, budget)` - *Think using pre-ranked evidence: list of (orig_idx, sentence, payload, score).*
-  - Method `.shrink(thoughts, budget)` - *The most valuable part of `thoughts` that fits: answer words first, support after them.*
+  - Method `.think_prepared(prepared, budget, asked)` - *Think using pre-ranked evidence: list of (orig_idx, sentence, payload, score).*
+  - Method `.shrink(thoughts, budget, asked)` - *The most valuable part of `thoughts` that fits: answer words first, support after them.*
 
 ---
 
@@ -152,6 +152,18 @@
 - `def render(thoughts, separator)` - *The script form of a thought list: one token per thought, in order.*
 - `def parse(script)` - *The thoughts a script holds; anything that is not a Lacon token is refused.*
 - `def answer_text(thoughts, words)` - *The readable answer a thought list speaks, or the empty string when it says unknown.*
+
+---
+
+### [`review_rules.py`](review_rules.py)
+**Size**: `54` lines (`1958` bytes)
+
+**Functions:**
+- `def test_context_loss()`
+- `def test_speed()`
+- `def test_rlm()`
+- `def test_integration()`
+- `def test_budget_ladder()`
 
 ---
 
@@ -203,7 +215,7 @@
 ### [`tests/test_cli.py`](tests/test_cli.py)
 > *CLI tests: the two commands, the flags, exit codes and the What/Why/Fix reports.*
 
-**Size**: `137` lines (`5598` bytes)
+**Size**: `137` lines (`5597` bytes)
 
 **Classes:**
 - `class AskTests` - *`ask` answers from a file, from standard input, or from nothing.*
@@ -237,7 +249,7 @@
 ### [`tests/test_performance.py`](tests/test_performance.py)
 > *Performance benchmark tests: ensure speed budgets are met and measure regressions.*
 
-**Size**: `223` lines (`9192` bytes)
+**Size**: `223` lines (`9191` bytes)
 
 **Classes:**
 - `class PerformanceTests` - *Speed budgets: every operation must complete within its budget.*
@@ -245,7 +257,7 @@
   - Method `.test_ask_warm_speed()` - *A repeated ask on same context completes within 5ms warm.*
   - Method `.test_alphabet_skeleton_speed()` - *skeleton on 1000 words completes within 200ms.*
   - Method `.test_lexicon_speed()` - *lexicon on 1000 words completes within 100ms.*
-  - Method `.test_thinker_rank_speed()` - *Thinker.rank on 500 sentences completes within 500ms.*
+  - Method `.test_thinker_rank_speed()` - *Thinker.rank on 500 sentences completes within 600ms.*
   - Method `.test_partition_speed()` - *partition on 10000 items completes within 10ms.*
   - Method `.test_full_pipeline_100_asks()` - *100 asks on 100-sentence context completes within 2s.*
 - `class CodeUnderstandingTests` - *Tests for code understanding: functions, classes, identifiers.*
@@ -273,7 +285,7 @@
 ### [`tests/test_rlm.py`](tests/test_rlm.py)
 > *RLM tests: the recursive engine - what it answers, when it splits, and what it never exceeds.*
 
-**Size**: `105` lines (`4346` bytes)
+**Size**: `106` lines (`4431` bytes)
 
 **Classes:**
 - `class SentenceTests` - *A context is a list of sentences, one per line or sentence mark.*

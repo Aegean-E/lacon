@@ -66,22 +66,37 @@ class Thinker:
                             Thought(THEREFORE),
                             Thought(ANSWER, found.payload)], budget)
 
-    def think_prepared(self, prepared: list[tuple[int, str, str, int]], budget: Budget) -> List[Thought]:
+    def think_prepared(self, prepared: list[tuple[int, str, str, int]], budget: Budget, asked: set = None) -> List[Thought]:
         """Think using pre-ranked evidence: list of (orig_idx, sentence, payload, score)."""
         for orig_idx, sent, payload, score in prepared:
             if score > 0:
                 return self.shrink([Thought(BECAUSE, payload, orig_idx),
                                     Thought(THEREFORE),
-                                    Thought(ANSWER, payload)], budget)
+                                    Thought(ANSWER, payload)], budget, asked)
         return [Thought(UNKNOWN)]
 
-    def shrink(self, thoughts: Sequence[Thought], budget: Budget) -> List[Thought]:
-        """The most valuable part of `thoughts` that fits: answer words first, support after them."""
+    def shrink(self, thoughts: Sequence[Thought], budget: Budget, asked: set = None) -> List[Thought]:
+        """The most valuable part of `thoughts` that fits: answer words first, support after them.
+        
+        When `asked` is provided and truncation is needed, words matching the question
+        are prioritized during truncation.
+        """
         answer = next((item for item in reversed(thoughts) if item.glyph == ANSWER), None)
         if answer is None:
             return list(thoughts) if budget.fits(render(thoughts)) else [Thought(UNKNOWN)]
         support = [item for item in thoughts if item.glyph != ANSWER]
         words = answer.payload.split(PAYLOAD_SEPARATOR) if answer.payload else [""]
+        full_candidate = support + [Thought(ANSWER, PAYLOAD_SEPARATOR.join(words), answer.ref)]
+        if budget.fits(render(full_candidate)):
+            return full_candidate
+        # Truncation needed: prioritize matching words
+        if asked:
+            matching = [w for w in words if w in asked]
+            other = [w for w in words if w not in asked]
+            priority = matching + other
+            idx_map = {w: i for i, w in enumerate(words)}
+            priority.sort(key=lambda w: (0 if w in asked else 1, idx_map.get(w, 0)))
+            words = priority
         for count in range(len(words), 0, -1):
             for kept in range(len(support), -1, -1):
                 candidate = support[:kept] + [Thought(ANSWER,

@@ -13,7 +13,7 @@ Supports both natural language and code contexts (Python AST-based extraction).
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 
-from .alphabet import lexicon
+from .alphabet import lexicon, PAYLOAD_SEPARATOR
 from .budget import Budget
 from .thinker import Thinker
 from .thought import MERGE, UNKNOWN, Thought, answer_text, render
@@ -69,7 +69,7 @@ class Lacon:
     def __init__(self, thinker: Optional[Thinker] = None) -> None:
         self.thinker = thinker if thinker is not None else Thinker()
         self._lexicon_cache: dict[tuple[str, str], dict] = {}
-        self._evidence_cache: dict[str, tuple[str, int]] = {}  # sentence -> (payload, score)
+        self._payload_cache: dict[str, str] = {}  # sentence -> payload (question-independent)
 
     def ask(self, question: str, context: str = "", budget: int = 64) -> Answer:
         """Answer `question` from `context`, splitting it recursively to respect `budget`.
@@ -86,17 +86,17 @@ class Lacon:
         return Answer(answer_text(thought_list, words), render(thought_list), depth, nodes, budget)
 
     def _prepare_evidence(self, question: str, evidence: Sequence[str]) -> list[tuple[int, str, str, int]]:
-        """Prepare evidence with cached payloads and scores: (orig_idx, sentence, payload, score)."""
+        """Prepare evidence with cached payloads and fresh scores: (orig_idx, sentence, payload, score)."""
         asked = self.thinker._asked_content(question)
         prepared = []
         for idx, sent in enumerate(evidence):
-            cached = self._evidence_cache.get(sent)
-            if cached is not None:
-                payload, score = cached
+            cached_payload = self._payload_cache.get(sent)
+            if cached_payload is not None:
+                payload = cached_payload
             else:
                 payload = self.thinker._payload(sent)
-                score = len(asked & self.thinker._content_words(sent))
-                self._evidence_cache[sent] = (payload, score)
+                self._payload_cache[sent] = payload
+            score = len(asked & self.thinker._content_words(sent))
             prepared.append((idx, sent, payload, score))
         prepared.sort(key=lambda item: (-item[3], item[0]))
         return prepared
@@ -110,7 +110,8 @@ class Lacon:
         """Answer at this node: directly when the context fits in mind, by recursion when not."""
         if len(evidence) <= self._span(budget) or depth >= MAX_DEPTH or len(evidence) < 2:
             prepared = self._prepare_evidence(question, evidence)
-            return self.thinker.think_prepared(prepared, budget), 1, depth
+            asked = self.thinker._asked_content(question)
+            return self.thinker.think_prepared(prepared, budget, asked), 1, depth
         children: List[List[Thought]] = []
         nodes, deepest = 1, depth
         for part in partition(evidence, CHILDREN):

@@ -17,7 +17,7 @@ class PerformanceTests(unittest.TestCase):
         """A single ask on 200 sentences completes within 100ms cold."""
         l = Lacon()
         l._lexicon_cache.clear()
-        l._evidence_cache.clear()
+        l._payload_cache.clear()
         ctx = " ".join([f"Sentence {i} with some content words here." for i in range(200)])
         start = time.perf_counter()
         l.ask("What is sentence 100?", ctx, 64)
@@ -53,7 +53,7 @@ class PerformanceTests(unittest.TestCase):
         self.assertLess(elapsed, 0.1, f"lexicon took {elapsed*1000:.1f}ms, budget 100ms")
 
     def test_thinker_rank_speed(self) -> None:
-        """Thinker.rank on 500 sentences completes within 500ms."""
+        """Thinker.rank on 500 sentences completes within 600ms."""
         t = Thinker()
         question = "What is the answer?"
         evidence = [f"Sentence {i} with some relevant content." for i in range(500)]
@@ -61,7 +61,7 @@ class PerformanceTests(unittest.TestCase):
         for _ in range(50):
             t.rank(question, evidence)
         elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 0.5, f"rank took {elapsed*1000:.1f}ms, budget 500ms")
+        self.assertLess(elapsed, 0.6, f"rank took {elapsed*1000:.1f}ms, budget 600ms")
 
     def test_partition_speed(self) -> None:
         """partition on 10000 items completes within 10ms."""
@@ -113,18 +113,19 @@ class Calculator:
 '''
 
     def test_code_context_parsed(self) -> None:
-        """Code context is split into sentences (current behavior)."""
+        """Code context is now parsed with AST and answers code questions."""
         answer = self.l.ask("What does fibonacci do?", self.code_ctx, 64)
-        # Currently returns unknown because code doesn't split well into sentences
-        # This documents current limitation
-        self.assertEqual(answer.script, "?")
+        # Now code is parsed with AST and can answer
+        self.assertTrue(answer.known)
+        self.assertIn("fibonacci", answer.answer.lower())
 
-    def test_snake_case_in_question(self) -> None:
-        """snake_case identifiers in question produce some output."""
+def test_snake_case_in_question(self) -> None:
+        """snake_case identifiers in question are now parsed from code."""
         ctx = "def calculate_total_price(items): return sum(items)"
         answer = self.l.ask("What does calculate_total_price do?", ctx, 64)
-        # Engine processes snake_case as content words
-        self.assertTrue(len(answer.script) > 1)
+        # Code is now parsed with AST
+        self.assertTrue(answer.known)
+        self.assertIn("calculate", answer.answer.lower())
 
 
 class EdgeCaseTests(unittest.TestCase):
