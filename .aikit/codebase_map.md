@@ -6,11 +6,11 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `15`
-- **Total Classes**: `23`
+- **Total Python Modules**: `16`
+- **Total Classes**: `26`
 - **Total Top-Level Functions**: `20`
-- **Total Class Methods**: `93`
-- **Total Source Lines**: `1075`
+- **Total Class Methods**: `115`
+- **Total Source Lines**: `1297`
 
 ---
 
@@ -215,6 +215,40 @@
 **Functions:**
 - `def run_cli(argv, stdin_text)` - *Run main() over in-memory streams; returns (exit code, stdout, stderr).*
 - `def write_context(text)` - *A temporary context file on disk, cleaned up by the calling test.*
+
+---
+
+### [`tests/test_performance.py`](tests/test_performance.py)
+> *Performance benchmark tests: ensure speed budgets are met and measure regressions.*
+
+**Size**: `222` lines (`9176` bytes)
+
+**Classes:**
+- `class PerformanceTests` - *Speed budgets: every operation must complete within its budget.*
+  - Method `.test_ask_cold_speed()` - *A single ask on 200 sentences completes within 100ms cold.*
+  - Method `.test_ask_warm_speed()` - *A repeated ask on same context completes within 5ms warm.*
+  - Method `.test_alphabet_skeleton_speed()` - *skeleton on 1000 words completes within 200ms.*
+  - Method `.test_lexicon_speed()` - *lexicon on 1000 words completes within 100ms.*
+  - Method `.test_thinker_rank_speed()` - *Thinker.rank on 500 sentences completes within 500ms.*
+  - Method `.test_partition_speed()` - *partition on 10000 items completes within 10ms.*
+  - Method `.test_full_pipeline_100_asks()` - *100 asks on 100-sentence context completes within 2s.*
+- `class CodeUnderstandingTests` - *Tests for code understanding: functions, classes, identifiers.*
+  - Method `.setUp()`
+  - Method `.test_code_context_parsed()` - *Code context is split into sentences (current behavior).*
+  - Method `.test_snake_case_in_question()` - *snake_case identifiers in question produce some output.*
+- `class EdgeCaseTests` - *Edge cases and stress tests.*
+  - Method `.test_very_long_context()` - *Context with 1000 sentences handled within depth cap.*
+  - Method `.test_many_questions_same_context()` - *Many different questions on same context reuse cache.*
+  - Method `.test_unicode_content()` - *Unicode content handled gracefully.*
+  - Method `.test_empty_and_whitespace()` - *Empty and whitespace-only contexts handled.*
+  - Method `.test_budget_zero_refused()` - *Budget of zero is refused at ask time.*
+  - Method `.test_negative_budget_refused()` - *Negative budget is refused.*
+  - Method `.test_script_round_trip_many()` - *Many random scripts parse and render correctly.*
+  - Method `.test_answer_text_consistency()` - *answer_text returns consistent results.*
+  - Method `.test_expand_unknown_returns_original()` - *expand returns the skeleton when word unknown.*
+  - Method `.test_skeleton_preserves_digits()` - *skeleton preserves digits (digits kept adjacent to letters).*
+  - Method `.test_content_words_filters_stopwords()` - *content_words filters common stopwords.*
+  - Method `.test_lexicon_picks_shortest()` - *lexicon picks shortest spelling for same skeleton.*
 
 ---
 
