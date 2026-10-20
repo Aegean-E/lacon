@@ -1,5 +1,6 @@
 ---
 name: lacon
+version: 0.1.0
 description: >-
   Recursive Language Model engine for ultra-compact reasoning. An AI that thinks in as few
   letters as possible: eight glyphs, vowelless payloads, hard letter budget, and recursive

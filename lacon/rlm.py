@@ -57,17 +57,30 @@ def partition(items: Sequence[str], parts: int) -> List[List[str]]:
 
 
 class Lacon:
-    """The engine: `ask` answers one question from a context, recurring as the budget demands."""
+    """The engine: `ask` answers one question from a context, recurring as the budget demands.
+
+    Reuses the vocabulary when the same question+context pair is asked again, which is useful
+    for batch evaluation or interactive sessions.
+    """
 
     def __init__(self, thinker: Optional[Thinker] = None) -> None:
         self.thinker = thinker if thinker is not None else Thinker()
+        self._lexicon_cache: dict[tuple[str, str], dict] = {}
 
     def ask(self, question: str, context: str = "", budget: int = 64) -> Answer:
         """Answer `question` from `context`, splitting it recursively to respect `budget`."""
+        key = (question, context)
+        words = self._lexicon_cache.get(key)
+        if words is None:
+            words = lexicon(question, context)
+            self._lexicon_cache[key] = words
         evidence = sentences(context)
-        words = lexicon(question, context)
         thought_list, nodes, depth = self._solve(question, evidence, Budget(budget), 0, words)
         return Answer(answer_text(thought_list, words), render(thought_list), depth, nodes, budget)
+
+    def clear_cache(self) -> None:
+        """Clear the vocabulary cache."""
+        self._lexicon_cache.clear()
 
     def _span(self, budget: Budget) -> int:
         """How many sentences a node holds in mind: a budget-eighth, but never fewer than two."""

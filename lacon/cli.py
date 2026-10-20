@@ -13,7 +13,7 @@ from typing import List, Optional
 from . import __version__
 from .rlm import Answer, Lacon
 
-HELP = """usage: lacon ask "QUESTION" [--context FILE] [--budget N] [--script] [--json] [--trace]
+HELP = """usage: lacon ask "QUESTION" [--context FILE] [--budget N] [--script] [--json] [--trace] [--quiet]
        lacon demo [--budget N]
 
 Lacon answers a question from a context, thinking in as few letters as possible: each thought is
@@ -31,6 +31,7 @@ options:
   --script           print the letters Lacon thought in, instead of the answer
   --json             print answer, script, depth, nodes and budget as one JSON object
   --trace            print the recursion shape before the answer
+  --quiet            suppress all stdout output (exit code still signals result)
   -h, --help         show this help and exit
   --version          show the version and exit
 
@@ -110,11 +111,12 @@ def _dispatch(arguments: List[str], stdin, stdout, stderr) -> int:
 
 def _options(arguments: List[str]) -> dict:
     """Parse the flags of one command into a plain option mapping."""
-    options = {"context": None, "budget": 64, "script": False, "json": False, "trace": False}
+    options = {"context": None, "budget": 64, "script": False, "json": False, "trace": False,
+               "quiet": False}
     index = 0
     while index < len(arguments):
         flag = arguments[index]
-        if flag in ("--script", "--json", "--trace"):
+        if flag in ("--script", "--json", "--trace", "--quiet"):
             options[flag[2:]] = True
         elif flag in ("--context", "--budget"):
             if index + 1 >= len(arguments):
@@ -174,10 +176,11 @@ def _run(question: str, context: str, options: dict, stdout, stderr) -> int:
     """Answer one question and report it in the requested form."""
     answer = Lacon().ask(question, context, options["budget"])
     if options["json"]:
-        stdout.write(json.dumps({"answer": answer.answer, "script": answer.script,
-                                 "budget": answer.budget, "depth": answer.depth,
-                                 "nodes": answer.nodes, "known": answer.known},
-                                ensure_ascii=False) + "\n")
+        if not options["quiet"]:
+            stdout.write(json.dumps({"answer": answer.answer, "script": answer.script,
+                                     "budget": answer.budget, "depth": answer.depth,
+                                     "nodes": answer.nodes, "known": answer.known},
+                                    ensure_ascii=False) + "\n")
         return 0 if answer.known else 1
     if not answer.known:
         ceiling = f"{answer.budget} letter" + ("" if answer.budget == 1 else "s")
@@ -187,9 +190,10 @@ def _run(question: str, context: str, options: dict, stdout, stderr) -> int:
                      f"  Fix: add sentences about the question, or raise --budget (now "
                      f"{answer.budget}) until the answer fits\n")
         return 1
-    if options["trace"]:
-        stdout.write(_trace(answer))
-    stdout.write((answer.script if options["script"] else answer.answer) + "\n")
+    if not options["quiet"]:
+        if options["trace"]:
+            stdout.write(_trace(answer))
+        stdout.write((answer.script if options["script"] else answer.answer) + "\n")
     return 0
 
 
