@@ -9,3 +9,4 @@ Persisted state carries a format version. A loader refuses a version it does not
 without modifying or quarantining that file; older versions migrate when a migration exists.
 
 ## Rules
+- **G-001** (ADR-001): every thought uses only the eight glyphs plus letters and digits; a ninth glyph needs its own ADR before any code.
