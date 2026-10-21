@@ -1,5 +1,58 @@
 {
   "version": 1,
-  "active_task": null,
-  "checkpoints": []
+  "active_task": {
+    "task_id": "task-lacon-inflight-completion",
+    "last_phase": "phase 4",
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1792588955.398002,
+    "completed_at": 1792588967.752875
+  },
+  "checkpoints": [
+    {
+      "task_id": "task-lacon-inflight-completion",
+      "phase": "phase 1",
+      "phase_num": 1,
+      "description": "[1/2] Plan: finish in-flight lacon work - align CLI/RLM test expectations with smart shrinking, wire the unused CSV/JSON parsers into Lacon.ask, replace the root-level scratch scripts with real tests, and refresh README test documentation",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792588897.953132,
+      "timestamp_str": "2026-10-21 16:21:37",
+      "impact_assessment": {
+        "why": "The working tree fixes two stale assertions but leaves three scratch files at the repository root. unittest discovery imports test_features.py and runs its prints, the CSV/JSON parsers are dead code because ask() still calls sentences(), and JSON parsing drops numeric values. The in-flight work is not honest until the feature is wired and covered.",
+        "benefits": "Makes the recently added format parsers reachable through the public API, preserves numeric JSON values, converts manual probes into regression tests, removes root-level test pollution, and keeps README claims accurate.",
+        "risks": "Contract: new keyword-only Lacon.ask(context_format=...) defaulting to auto; JSON/CSV contexts now parse structurally instead of as plain sentences. Dependency: stdlib only. Concurrency: none. State: no persisted state changes. A deliberately small context_format value can fall back to text by design.",
+        "mitigation": "Add tests/test_formats.py for parsers, auto-detection, format answers and the tree-wide budget, plus tests/test_code_understanding.py for AST extraction; run python -m unittest discover and python aikit.py check lacon before committing."
+      }
+    },
+    {
+      "task_id": "task-lacon-inflight-completion",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/2] Milestone 1 completed: wired Lacon.ask to the CSV/JSON/text readers via context_format, kept JSON keys and numeric values, replaced the root scratch scripts with 16 format/code-understanding tests, aligned the shrinking expectations, and refreshed README examples and test coverage notes.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792588955.2473652,
+      "timestamp_str": "2026-10-21 16:22:35"
+    },
+    {
+      "task_id": "task-lacon-inflight-completion",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 verification: python aikit.py check lacon passed 4/4 (test, hygiene, guidelines, secrets); checklists: passed; unittest discovery runs 106 tests green and no longer imports root-level scratch scripts.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792588955.398002,
+      "timestamp_str": "2026-10-21 16:22:35"
+    },
+    {
+      "task_id": "task-lacon-inflight-completion",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-lacon-inflight-completion' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792588967.7528765,
+      "timestamp_str": "2026-10-21 16:22:47"
+    }
+  ]
 }
