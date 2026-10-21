@@ -61,6 +61,8 @@ lacon/
     ├── test_alphabet.py
     ├── test_budget.py
     ├── test_cli.py
+    ├── test_code_understanding.py
+    ├── test_formats.py
     ├── test_performance.py
     ├── test_rlm.py
     ├── test_thinker.py
@@ -104,13 +106,13 @@ python -m lacon demo --budget 1  --trace
 | Budget | Thought | Answer |
 |---|---|---|
 | 64 | `<pnt.kps.stl.rst^1 > !pnt.kps.stl.rst` | `paint keeps steel rust` |
-| 16 | `=01 !pnt.kps` | `paint keeps` |
-| 8 | `!pnt.kps` | `paint keeps` |
+| 16 | `=01 !kps.rst` | `keeps rust` |
+| 8 | `!kps.rst` | `keeps rust` |
 | 1 | `?` (exit 1) | nothing is affordable, so Lacon says it does not know |
 
-Shrinking keeps answer words before provenance: more answer words beat more support, and support
-goes from the right, so `<` and `>` disappear before the answer itself shortens (ADR-002). A ceiling
-of one letter still has an honest thought, because `?` is one letter.
+Shrinking keeps the words the question asks for before provenance: a matching word survives
+longer than a word that only appears in the context (ADR-002). A ceiling of one letter still has
+an honest thought, because `?` is one letter.
 
 ## 🔁 Thinking recursively over a long context
 
@@ -162,6 +164,9 @@ answer.script   # '<pnt.kps.stl.rst^1 > !pnt.kps.stl.rst'
 answer.known    # True
 ```
 
+`ask` auto-detects Python, CSV and JSON contexts. Pass `context_format="text"` (or `"csv"`,
+`"json"`) to force a reader; `max_total_chars` caps the whole recursion tree instead of one node.
+
 ## 🧪 Running the tests
 
 ```bash
@@ -174,9 +179,9 @@ Single module, from the project root:
 python -m unittest tests.test_rlm
 ```
 
-Seventy tests cover the alphabet and its round trip, the budget and its child, the thinker's ranking
-and its shrinking ladder, the engine's split/merge and its depth cap, and the command line's exit
-codes.
+The suite covers the alphabet and its round trip, the budget and its child, the thinker's ranking
+and its shrinking ladder, the engine's split/merge and its depth cap, CSV/JSON and code context
+readers, the tree-wide budget, and the command line's exit codes.
 
 ## 🚧 Boundaries
 

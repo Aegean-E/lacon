@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `19`
-- **Total Classes**: `28`
-- **Total Top-Level Functions**: `33`
-- **Total Class Methods**: `116`
-- **Total Source Lines**: `1876`
+- **Total Classes**: `33`
+- **Total Top-Level Functions**: `28`
+- **Total Class Methods**: `132`
+- **Total Source Lines**: `1960`
 
 ---
 
@@ -98,7 +98,7 @@
 ### [`lacon/rlm.py`](lacon/rlm.py)
 > *Lacon's recursive language model: one question answered by splitting context and recurring.*
 
-**Size**: `463` lines (`16789` bytes)
+**Size**: `472` lines (`17242` bytes)
 
 **Classes:**
 - `class TreeNode` - *A node in the recursion tree for trajectory tracking.*
@@ -106,7 +106,7 @@
   - Property `.known` - *Whether Lacon found evidence that answers, rather than saying unknown.*
 - `class Lacon` - *The engine: `ask` answers one question from a context, recurring as the budget demands.*
   - Method `.__init__(thinker, *, max_total_chars)`
-  - Method `.ask(question, context, budget, *, max_total_chars)` - *Answer `question` from `context`, splitting it recursively to respect `budget`.*
+  - Method `.ask(question, context, budget, *, max_total_chars, context_format)` - *Answer `question` from `context`, splitting it recursively to respect `budget`.*
   - Method `._prepare_evidence(question, evidence)` - *Prepare evidence with cached payloads and fresh scores: (orig_idx, sentence, payload, score).*
   - Method `._span(budget)` - *How many sentences a node holds in mind: a budget-eighth, but never fewer than two.*
   - Method `._solve(question, evidence, budget, depth, words, tree_chars_limit, parent_id)` - *Answer at this node: directly when the context fits in mind, by recursion when not.*
@@ -118,7 +118,7 @@
 - `def sentences(text)` - *The sentences of a context: one per line or sentence mark, blanks dropped.*
 - `def partition(items, parts)` - *Split `items` into at most `parts` contiguous chunks, as evenly as the length allows.*
 - `def parse_csv(text)` - *Parse CSV text into sentences (one per row).*
-- `def parse_json(text)` - *Parse JSON text into sentences (extract string values).*
+- `def parse_json(text)` - *Parse JSON into sentences that keep keys and scalar values.*
 - `def parse_context(text, format)` - *Parse context text based on format.*
 
 ---
@@ -158,23 +158,6 @@
 - `def render(thoughts, separator)` - *The script form of a thought list: one token per thought, in order.*
 - `def parse(script)` - *The thoughts a script holds; anything that is not a Lacon token is refused.*
 - `def answer_text(thoughts, words)` - *The readable answer a thought list speaks, or the empty string when it says unknown.*
-
----
-
-### [`review_rules.py`](review_rules.py)
-**Size**: `54` lines (`1958` bytes)
-
-**Functions:**
-- `def test_context_loss()`
-- `def test_speed()`
-- `def test_rlm()`
-- `def test_integration()`
-- `def test_budget_ladder()`
-
----
-
-### [`test_features.py`](test_features.py)
-**Size**: `22` lines (`900` bytes)
 
 ---
 
@@ -254,6 +237,45 @@
 **Functions:**
 - `def run_cli(argv, stdin_text)` - *Run main() over in-memory streams; returns (exit code, stdout, stderr).*
 - `def write_context(text)` - *A temporary context file on disk, cleaned up by the calling test.*
+
+---
+
+### [`tests/test_code_understanding.py`](tests/test_code_understanding.py)
+> *Code understanding tests: Python source becomes meaningful sentences.*
+
+**Size**: `71` lines (`2486` bytes)
+
+**Classes:**
+- `class ExtractTests` - *The AST reader finds the elements a question can ask about.*
+  - Method `.test_functions_classes_and_imports_are_found()`
+  - Method `.test_a_function_carries_its_signature_and_docstring()`
+  - Method `.test_a_syntax_error_yields_no_elements()`
+  - Method `.test_code_to_sentences_labels_each_kind()`
+- `class DetectionTests` - *Code is recognized by strong line-leading markers, not by prose.*
+  - Method `.test_python_source_is_code()`
+  - Method `.test_natural_language_is_not_code()`
+  - Method `.test_an_indented_definition_is_still_code()`
+
+---
+
+### [`tests/test_formats.py`](tests/test_formats.py)
+> *Format parser tests: CSV and JSON contexts become sentences the engine can read.*
+
+**Size**: `80` lines (`3193` bytes)
+
+**Classes:**
+- `class ParserTests` - *Each format keeps the values a question can match.*
+  - Method `.test_csv_rows_become_sentences()`
+  - Method `.test_json_keeps_keys_and_numbers()`
+  - Method `.test_invalid_json_is_empty()`
+  - Method `.test_auto_detects_json_csv_and_text()`
+  - Method `.test_an_explicit_format_bypasses_detection()`
+- `class FormatAskTests` - *Lacon.ask uses the parsers by default and exposes the format override.*
+  - Method `.test_a_csv_context_answers_the_question()`
+  - Method `.test_a_json_context_answers_the_question()`
+  - Method `.test_text_format_reads_json_literally()`
+- `class TreeBudgetTests` - *A tree-wide budget stops expansion instead of visiting every node.*
+  - Method `.test_a_tree_budget_reduces_the_visited_nodes()`
 
 ---
 

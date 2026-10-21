@@ -125,10 +125,12 @@ class Lacon:
         budget: int = 64,
         *,
         max_total_chars: Optional[int] = None,
+        context_format: str = "auto",
     ) -> Answer:
         """Answer `question` from `context`, splitting it recursively to respect `budget`.
 
-        If `context` looks like Python code, uses AST-based extraction for better understanding.
+        Python code, CSV and JSON contexts are auto-detected. Pass `context_format` as
+        "text", "csv" or "json" to force one reader; "auto" is the default.
 
         Args:
             question: The question to answer
@@ -136,6 +138,7 @@ class Lacon:
             budget: Per-node character budget (default 64)
             max_total_chars: Optional tree-wide character budget. If set, stops recursion
                            when aggregate script length across tree exceeds this limit.
+            context_format: "auto", "text", "csv" or "json"
         """
         start_time = time.perf_counter()
         key = (question, context)
@@ -144,7 +147,10 @@ class Lacon:
             words = lexicon(question, context)
             self._lexicon_cache[key] = words
 
-        evidence = code_to_sentences(context) if is_code_context(context) else sentences(context)
+        if context_format == "auto" and is_code_context(context):
+            evidence = code_to_sentences(context)
+        else:
+            evidence = parse_context(context, context_format)
 
         # Reset tree-wide tracking
         self._tree_chars = 0
@@ -410,26 +416,29 @@ def parse_csv(text: str) -> List[str]:
 
 
 def parse_json(text: str) -> List[str]:
-    """Parse JSON text into sentences (extract string values)."""
+    """Parse JSON into sentences that keep keys and scalar values."""
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
         return []
 
-    def extract_strings(obj):
-        strings = []
-        if isinstance(obj, str):
-            strings.append(obj)
-        elif isinstance(obj, dict):
-            for v in obj.values():
-                strings.extend(extract_strings(v))
-        elif isinstance(obj, list):
-            for item in obj:
-                strings.extend(extract_strings(item))
-        return strings
+    def flatten(value, path):
+        if isinstance(value, dict):
+            scalars = []
+            for key, item in value.items():
+                if isinstance(item, (dict, list)):
+                    yield from flatten(item, path + [str(key)])
+                else:
+                    scalars.extend([str(key), str(item)])
+            if scalars:
+                yield " ".join(path + scalars)
+        elif isinstance(value, list):
+            for item in value:
+                yield from flatten(item, path)
+        elif value is not None:
+            yield " ".join(path + [str(value)])
 
-    strings = extract_strings(data)
-    return [s.strip() for s in strings if s.strip()]
+    return [s.strip() for s in flatten(data, []) if s.strip()]
 
 
 def parse_context(text: str, format: str = "auto") -> List[str]:
