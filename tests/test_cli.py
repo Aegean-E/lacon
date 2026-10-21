@@ -39,7 +39,7 @@ class AskTests(unittest.TestCase):
         code, out, _ = run_cli(["demo", "--budget", "16", "--trace"])
         self.assertEqual(code, 0)
         self.assertTrue(out.startswith("[lacon] 12 of 16 letters, depth 2, 7 node(s)\n"))
-        self.assertTrue(out.endswith("paint keeps\n"))
+        self.assertTrue(out.endswith("keeps rust\n"))
 
     def test_context_comes_from_a_file(self) -> None:
         path = write_context(CONTEXT_FILE_TEXT)
@@ -54,7 +54,7 @@ class AskTests(unittest.TestCase):
     def test_script_mode_prints_the_letters_only(self) -> None:
         code, out, _ = run_cli(["ask", DEMO_QUESTION, "--context", "-", "--budget", "8",
                                 "--script"], CONTEXT_FILE_TEXT)
-        self.assertEqual((code, out), (0, "!pnt.kps\n"))
+        self.assertEqual((code, out), (0, "!kps.rst\n"))
         self.assertLessEqual(len(out.strip()), 8)
 
     def test_json_mode_reports_the_whole_answer(self) -> None:

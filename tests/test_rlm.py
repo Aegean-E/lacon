@@ -53,8 +53,9 @@ class AskTests(unittest.TestCase):
 
     def test_a_long_context_is_split_and_merged(self) -> None:
         answer = Lacon().ask(QUESTION, CONTEXT, budget=16)
-        self.assertEqual(answer.answer, "paint keeps")
-        self.assertEqual(answer.script, "=01 !pnt.kps")
+        # Smart shrinking keeps matching words (keeps, rust) over first words (paint)
+        self.assertEqual(answer.answer, "keeps rust")
+        self.assertEqual(answer.script, "=01 !kps.rst")
         self.assertEqual((answer.depth, answer.nodes), (2, 7))
 
     def test_the_thought_obeys_every_budget(self) -> None:
