@@ -55,3 +55,71 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   depth and node count. Costs: a small budget degrades the answer to fewer words rather than a
   shorter phrasing of the same idea, and the total letters across a recursive tree exceed the root
   budget, which is the intended cost of splitting.
+
+### ADR-003: Pebble source is an optional context format, read through Pebble's own parser
+- **Date**: 2026-10-21
+- **Status**: Accepted
+- **Context**: Lacon's code understanding reads Python through `ast` and produces shallow,
+  breadth-first signatures. Pebble already has a positioned lexer, parser and AST for its own
+  language, and the two projects are complementary at that boundary: Pebble supplies structure,
+  Lacon supplies budgeted evidence selection. Merging the engines would force Pebble to grow text
+  utilities and would force Lacon to carry an evaluator, so the integration must stay a narrow,
+  optional adapter rather than a shared runtime.
+- **Decision**: Add `context_format="pebble"` to `Lacon.ask` and `--context-format pebble` to the
+  command line. The adapter lives in `lacon/pebble_context.py`, imports Pebble lazily, and uses
+  Pebble's own `tokenize`, `parse` and AST nodes; it turns comments, function signatures, `let`
+  declarations, loops and `if` branches into deterministic evidence sentences. A `.peb` context
+  path selects the reader when the format is `auto`; standard input requires the explicit flag.
+  Core Lacon stays standard-library-only when the format is unused, and Pebble must never import
+  Lacon. A missing Pebble checkout or a Pebble syntax error raises `PebbleContextError` with
+  What/Why/Fix and makes the command line exit 2. The lexicon used for expansion now includes the
+  evidence sentences as well as the raw question and context, so synthetic words such as
+  "function" and "parameters" expand readably. The alphabet, budget ladder, recursion and thought
+  format are unchanged.
+- **Consequences**: Lacon can answer structural questions about `.peb` files offline, with an
+  auditable thought script, while remaining dependency-free for every other context. Costs: the
+  feature has an optional runtime dependency on a sibling or installed Pebble package; the adapter
+  adds evidence vocabulary to the lexicon; answers remain keyword-overlap answers, so they describe
+  declarations and comments rather than executing the program; and `.peb` inference is only a
+  path-suffix rule, not content detection.
+
+### ADR-004: The tree-wide character budget is a hard aggregate cap
+- **Date**: 2026-10-21
+- **Status**: Accepted
+- **Context**: README and the `Lacon.ask` docstring promise that `max_total_chars` caps the whole
+  recursion tree, but the implementation only stopped before solving a node when the aggregate
+  already exceeded the limit. The root script was never fitted to the cap, so a cap of one could
+  still return a thirty-seven-character answer, and the only test asserted a reduction rather than
+  the bound. The contract was therefore untrue at the boundary it claimed to protect.
+- **Decision**: `max_total_chars` is a hard cap on `Answer.tree_chars`, the sum of every node's
+  script length. Each leaf is fitted to the characters remaining; a recursive node reserves at
+  most its own letter budget for the merge, gives each child an absolute cap of at least
+  `MIN_CHILD`, and only splits when at least two child allowances plus one parent allowance fit.
+  A child cannot consume another child's or the parent's share. A cap of zero returns an empty
+  unknown script and an aggregate of zero; a one-character cap can return only `?`. A generous cap
+  reproduces the unlimited tree exactly.
+- **Consequences**: The budget claim is now testable at every ceiling, including 0, 1, 8, 17, 24,
+  50, 100 and 200 characters, and a generous cap is pinned against the unlimited answer. Costs: a
+  tight cap can leave budget unused or return an unknown answer rather than an over-budget answer,
+  which is the intended trade; the allocation adds two small helpers and a recursion-eligibility
+  check to the engine.
+
+### ADR-005: Wall-clock benchmarks leave the default regression gate
+- **Date**: 2026-10-21
+- **Status**: Accepted
+- **Context**: `tests/test_performance.py::test_lexicon_speed` failed the Phase 4 test gate at
+  112.9ms against a 100ms wall-clock budget while another process was running, then passed when
+  run alone. The suite is the project's deterministic regression shield, and host load made a
+  green gate depend on scheduling rather than on the code. The user approved changing this test.
+- **Decision**: Move the seven wall-clock `PerformanceTests` out of `tests/test_performance.py`
+  into `benchmarks/performance.py`, which `unittest discover` does not collect because its name
+  does not match `test*.py`. Run the benchmarks explicitly with
+  `python -m unittest benchmarks.performance`. Keep the behaviour, code-understanding and edge-case
+  tests in the default suite, and collect the previously module-level `test_snake_case_in_question`
+  inside `CodeUnderstandingTests`. The benchmark thresholds stay unchanged so the measurements
+  remain comparable; only their place in the gate changes.
+- **Consequences**: The default suite is deterministic, faster and still covers the engine's
+  behaviour; performance regressions remain measurable on a quiet host. Cost: timing checks are no
+  longer a hard commit gate, so a deliberate benchmark run is required when performance changes.
+  This ADR names the weakened/relocated test `tests/test_performance.py::test_lexicon_speed` and
+  records the user's approval for the move.

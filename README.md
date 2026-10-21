@@ -2,7 +2,8 @@
 
 An AI that thinks in as few letters as possible, recursively over a long context. Everything is in
 this project: the alphabet, the budget, the thinker and the recursive engine. No network, no API
-key, no model weights, no third-party dependency.
+key, no model weights. The core is standard library only; an optional adapter reads Pebble source
+when the sibling Pebble project is available (ADR-003).
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
@@ -52,9 +53,13 @@ lacon/
 │   ├── budget.py             <- the letter ceiling, its room, and the child budget
 │   ├── cli.py                <- `ask` and `demo`, exit codes 0/1/2, What/Why/Fix reports
 │   ├── code_understanding.py <- AST-based code element extraction
+│   ├── pebble_context.py     <- optional Pebble source reader (ADR-003)
 │   ├── rlm.py                <- the recursive engine: split, recurse, merge, cap
 │   ├── thinker.py            <- ranks the evidence, writes the cheapest thought
 │   └── thought.py            <- the eight glyphs and the one-token script form
+├── benchmarks/
+│   ├── __init__.py
+│   └── performance.py        <- wall-clock benchmarks, run explicitly (ADR-005)
 ├── pyproject.toml
 └── tests/
     ├── __init__.py
@@ -63,7 +68,8 @@ lacon/
     ├── test_cli.py
     ├── test_code_understanding.py
     ├── test_formats.py
-    ├── test_performance.py
+    ├── test_pebble_context.py
+    ├── test_performance.py   <- behaviour and edge cases; benchmarks moved out
     ├── test_rlm.py
     ├── test_thinker.py
     └── test_thought.py
@@ -135,6 +141,23 @@ paint keeps
 Twelve letters of a sixteen-letter ceiling, spent across two levels of splitting and seven nodes:
 that is the root answer with its budget intact, and the recursion that produced it below.
 
+## Reading Pebble code
+
+Lacon can answer structural questions about a Pebble program by reading it through Pebble's own
+lexer and parser. Functions, parameters, `let` declarations, loops, `if` branches and `#` comments
+become evidence sentences, so the answer and its thought script stay auditable (ADR-003).
+
+```bash
+python -m lacon ask "what does fib do?" --context ../pebble/examples/fibonacci.peb
+python -m lacon ask "what does fib do?" --context - --context-format pebble < program.peb
+```
+
+A `.peb` path selects the reader automatically; standard input needs `--context-format pebble`.
+The adapter imports Pebble only when it is used. In this AIKit workspace it finds the sibling
+`projects/pebble` checkout; elsewhere install Pebble (for example `pip install -e ../pebble`) or
+pass a checkout on the path. A missing checkout or a Pebble syntax error is reported as a
+What/Why/Fix error with exit code 2.
+
 ## 🚀 Running it
 
 ```bash
@@ -146,6 +169,8 @@ cat notes.txt | python -m lacon ask "what keeps steel from rust?" --context -
 ```
 
 - `--context FILE` answers from a file; `--context -` reads that context from standard input.
+- `--context-format FORMAT` forces `auto`, `text`, `csv`, `json` or `pebble`; `.peb` files use
+  `pebble` under `auto`.
 - `--script` prints the letters Lacon thought in instead of the answer; `--trace` prints the
   recursion shape (letters used, depth, nodes) before it; `--json` prints answer, script, budget,
   depth, nodes and `known` as one object.
@@ -165,7 +190,9 @@ answer.known    # True
 ```
 
 `ask` auto-detects Python, CSV and JSON contexts. Pass `context_format="text"` (or `"csv"`,
-`"json"`) to force a reader; `max_total_chars` caps the whole recursion tree instead of one node.
+`"json"`, `"pebble"`) to force a reader. `max_total_chars` is a hard cap on the total script
+length across the whole recursion tree (`tree_chars`), not just one node. A Pebble context needs
+the optional adapter from ADR-003.
 
 ## 🧪 Running the tests
 
@@ -179,9 +206,15 @@ Single module, from the project root:
 python -m unittest tests.test_rlm
 ```
 
+Wall-clock benchmarks are explicit, because host load must not decide a gate (ADR-005):
+
+```bash
+python -m unittest benchmarks.performance
+```
+
 The suite covers the alphabet and its round trip, the budget and its child, the thinker's ranking
-and its shrinking ladder, the engine's split/merge and its depth cap, CSV/JSON and code context
-readers, the tree-wide budget, and the command line's exit codes.
+and its shrinking ladder, the engine's split/merge and its depth cap, CSV/JSON, Python and Pebble
+context readers, the hard tree-wide budget, and the command line's exit codes.
 
 ## 🚧 Boundaries
 
@@ -189,7 +222,11 @@ readers, the tree-wide budget, and the command line's exit codes.
   knowledge and never guesses (`lacon/thinker.py`).
 - A recursive tree spends more letters in total than its root budget; the root answer is the one
   that obeys the ceiling (ADR-002).
+- A finite `max_total_chars` is a hard aggregate cap: `tree_chars` never exceeds it, and a very
+  small cap degrades to `?` or an empty script rather than overspending (ADR-004).
 - The alphabet, the ladder and the bounds are frozen in [.aikit/decisions.md](.aikit/decisions.md);
   a change to any of them needs a new ADR, and a ninth glyph needs one before any code (G-001).
+- The Pebble reader is an optional boundary: Pebble never imports Lacon, and Lacon's core remains
+  standard-library-only when the format is unused (ADR-003).
 - Adding a user-supplied model, claims and contrasts beyond what an answer needs, and streaming are
   non-goals of v1 (ADR-001).

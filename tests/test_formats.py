@@ -75,6 +75,31 @@ class TreeBudgetTests(unittest.TestCase):
         self.assertLess(limited.tree_nodes, unlimited.tree_nodes)
         self.assertLess(limited.tree_chars, unlimited.tree_chars)
 
+    def test_the_tree_budget_is_a_hard_cap_at_every_ceiling(self) -> None:
+        context = " ".join(f"Sentence {i} about bridges." for i in range(100))
+
+        for limit in (0, 1, 8, 17, 24, 50, 100, 200):
+            with self.subTest(limit=limit):
+                answer = Lacon().ask("What about bridges?", context, 64,
+                                     max_total_chars=limit)
+                self.assertLessEqual(answer.tree_chars, limit)
+
+    def test_a_generous_cap_matches_the_unlimited_tree(self) -> None:
+        context = " ".join(f"Sentence {i} about bridges." for i in range(100))
+
+        unlimited = Lacon().ask("What about bridges?", context, 64)
+        generous = Lacon().ask("What about bridges?", context, 64,
+                               max_total_chars=1000)
+
+        self.assertEqual(generous.script, unlimited.script)
+        self.assertEqual(generous.tree_chars, unlimited.tree_chars)
+
+    def test_a_negative_tree_budget_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            Lacon(max_total_chars=-1)
+        with self.assertRaises(ValueError):
+            Lacon().ask("What about bridges?", "Bridges.", 64, max_total_chars=-1)
+
 
 if __name__ == "__main__":
     unittest.main()

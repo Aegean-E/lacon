@@ -7,14 +7,16 @@ afforded enough letters to name a word. A parent then merges what its children s
 one that matches the question best and marking the merge with the `=` glyph. The recursion stops at
 a depth cap, at two sentences or fewer, or wherever a thought already fits.
 
-Supports both natural language and code contexts (Python AST-based extraction).
+Supports natural language, Python code (AST-based extraction) and Pebble code
+(read through the optional Pebble adapter).
 
 Enhancements from production RLM systems:
 - Tree-wide budget tracking (aggregate script length across recursion tree)
 - Trajectory logging with JSONL export
 - Tree visualization for debugging
-- Tree-wide budget limits (stop when aggregate exceeds limit)
+- A hard cap on the aggregate script length across the recursion tree
 - Document format parsers (CSV, JSON - stdlib only)
+- Optional Pebble source contexts through Pebble's own lexer and parser
 """
 
 from dataclasses import dataclass, field
@@ -62,7 +64,7 @@ class Answer:
     nodes: int
     budget: int
     # New fields for production features
-    tree_chars: int = 0          # Aggregate script length across entire tree
+    tree_chars: int = 0          # Aggregate script length across the tree; never above the cap
     tree_nodes: int = 0          # Total nodes in tree
     max_depth: int = 0           # Maximum depth reached
     duration_ms: float = 0.0     # Total time spent
@@ -109,10 +111,12 @@ class Lacon:
         self,
         thinker: Optional[Thinker] = None,
         *,
-        max_total_chars: Optional[int] = None,   # Tree-wide character budget (None = unlimited)
+        max_total_chars: Optional[int] = None,   # Hard tree-wide cap (None = unlimited)
     ) -> None:
+        if max_total_chars is not None and max_total_chars < 0:
+            raise ValueError("max_total_chars cannot be negative")
         self.thinker = thinker if thinker is not None else Thinker()
-        self._lexicon_cache: dict[tuple[str, str], dict] = {}
+        self._lexicon_cache: dict[tuple[str, str, str], dict] = {}
         self._payload_cache: dict[str, str] = {}
         self._max_total_chars = max_total_chars
         self._tree_chars = 0
@@ -130,27 +134,31 @@ class Lacon:
         """Answer `question` from `context`, splitting it recursively to respect `budget`.
 
         Python code, CSV and JSON contexts are auto-detected. Pass `context_format` as
-        "text", "csv" or "json" to force one reader; "auto" is the default.
+        "text", "csv", "json" or "pebble" to force one reader; "auto" is the default.
+        A "pebble" context needs the Pebble package, imported only when requested.
 
         Args:
             question: The question to answer
             context: The context text (or code) to answer from
             budget: Per-node character budget (default 64)
-            max_total_chars: Optional tree-wide character budget. If set, stops recursion
-                           when aggregate script length across tree exceeds this limit.
-            context_format: "auto", "text", "csv" or "json"
+            max_total_chars: Optional hard cap on the aggregate script length across the
+                           whole recursion tree; every node is fitted so `tree_chars`
+                           never exceeds it.
+            context_format: "auto", "text", "csv", "json" or "pebble"
         """
+        if max_total_chars is not None and max_total_chars < 0:
+            raise ValueError("max_total_chars cannot be negative")
         start_time = time.perf_counter()
-        key = (question, context)
-        words = self._lexicon_cache.get(key)
-        if words is None:
-            words = lexicon(question, context)
-            self._lexicon_cache[key] = words
-
         if context_format == "auto" and is_code_context(context):
             evidence = code_to_sentences(context)
         else:
             evidence = parse_context(context, context_format)
+
+        key = (question, context, context_format)
+        words = self._lexicon_cache.get(key)
+        if words is None:
+            words = lexicon(question, context, *evidence)
+            self._lexicon_cache[key] = words
 
         # Reset tree-wide tracking
         self._tree_chars = 0
@@ -202,6 +210,21 @@ class Lacon:
         """How many sentences a node holds in mind: a budget-eighth, but never fewer than two."""
         return max(MIN_SPAN, budget.limit // SPAN_DIVISOR)
 
+    def _remaining(self, tree_chars_limit: Optional[int]) -> Optional[int]:
+        """Characters left under the tree-wide cap, or None when the cap is off."""
+        if tree_chars_limit is None:
+            return None
+        return max(0, tree_chars_limit - self._tree_chars)
+
+    def _fit(self, thoughts: Sequence[Thought], budget: Budget, asked: set,
+             remaining: Optional[int]) -> List[Thought]:
+        """The most valuable part of a thought list that fits the remaining tree cap."""
+        if remaining is None:
+            return list(thoughts)
+        if remaining <= 0:
+            return []
+        return self.thinker.shrink(thoughts, Budget(min(budget.limit, remaining)), asked)
+
     def _solve(
         self,
         question: str,
@@ -218,12 +241,10 @@ class Lacon:
 
         node_start = time.perf_counter()
         span = self._span(budget)
+        remaining = self._remaining(tree_chars_limit)
 
-        # Check tree-wide budget limit before proceeding
-        if tree_chars_limit is not None and self._tree_chars >= tree_chars_limit:
-            thought_list = [Thought(UNKNOWN)]
-            script = render(thought_list)
-            self._tree_chars += len(script)
+        # A zero remaining cap cannot afford even the one-letter unknown glyph.
+        if remaining is not None and remaining <= 0:
             node = TreeNode(
                 depth=depth,
                 node_id=node_id,
@@ -231,18 +252,24 @@ class Lacon:
                 evidence_count=len(evidence),
                 budget=budget.limit,
                 span=span,
-                script=script,
+                script="",
                 answer="",
                 known=False,
                 duration_ms=(time.perf_counter() - node_start) * 1000,
+                max_child_depth=depth,
             )
-            return thought_list, node
+            return [], node
 
-        # Base case: context fits in mind, depth cap, or single sentence
-        if len(evidence) <= span or depth >= MAX_DEPTH or len(evidence) < 2:
+        # Base case: context fits in mind, depth cap, single sentence, or a cap
+        # too small to give both children a word and keep one for this node.
+        can_recurse = (tree_chars_limit is None
+                       or remaining >= CHILDREN * MIN_CHILD + MIN_CHILD)
+        if (len(evidence) <= span or depth >= MAX_DEPTH or len(evidence) < 2
+                or not can_recurse):
             prepared = self._prepare_evidence(question, evidence)
             asked = self.thinker._asked_content(question)
             thought_list = self.thinker.think_prepared(prepared, budget, asked)
+            thought_list = self._fit(thought_list, budget, asked, remaining)
             script = render(thought_list)
             self._tree_chars += len(script)
 
@@ -262,19 +289,31 @@ class Lacon:
             )
             return thought_list, node
 
-        # Recursive case: split and recurse
+        # Recursive case: split and recurse. Reserve this node's letter budget
+        # for the merge, but never take a child below MIN_CHILD; each child
+        # receives an absolute cap, so one subtree cannot starve the other.
+        parts = partition(evidence, CHILDREN)
+        if remaining is None:
+            parent_reserve = 0
+            child_allowance = 0
+        else:
+            parent_reserve = min(remaining - len(parts) * MIN_CHILD,
+                                 max(1, budget.limit))
+            child_allowance = (remaining - parent_reserve) // len(parts)
         children: List[List[Thought]] = []
         child_nodes: List[TreeNode] = []
         nodes, deepest = 1, depth
 
-        for part in partition(evidence, CHILDREN):
+        for part in parts:
+            child_limit = (None if tree_chars_limit is None
+                           else self._tree_chars + child_allowance)
             child_thoughts, child_node = self._solve(
                 question,
                 part,
                 budget.child(),
                 depth + 1,
                 words,
-                tree_chars_limit,
+                child_limit,
                 node_id,
             )
             children.append(child_thoughts)
@@ -285,6 +324,8 @@ class Lacon:
         # Merge children
         asked = self.thinker._asked_content(question)
         merged_thoughts = self._merge(question, children, budget, asked)
+        merged_thoughts = self._fit(merged_thoughts, budget, asked,
+                                    self._remaining(tree_chars_limit))
         script = render(merged_thoughts)
         self._tree_chars += len(script)
 
@@ -446,11 +487,20 @@ def parse_context(text: str, format: str = "auto") -> List[str]:
 
     Args:
         text: The input text
-        format: "auto", "text", "csv", "json"
+        format: "auto", "text", "csv", "json" or "pebble"
 
     Returns:
         List of sentences/rows
+
+    Raises:
+        ValueError: The format name is not one of the five readers.
+        PebbleContextError: A "pebble" context could not be read.
     """
+    if format not in ("auto", "text", "csv", "json", "pebble"):
+        raise ValueError(f"unknown context format '{format}'; use auto, text, csv, json or pebble")
+    if format == "pebble":
+        from .pebble_context import pebble_to_sentences
+        return pebble_to_sentences(text)
     if format == "csv":
         return parse_csv(text)
     elif format == "json":

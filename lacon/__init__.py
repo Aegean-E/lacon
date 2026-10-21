@@ -4,7 +4,8 @@ The whole package is self-contained: there is no network call and no external mo
 is the API, `python -m lacon` is the command line.
 """
 
+from .pebble_context import PebbleContextError
 from .rlm import Answer, Lacon
 
-__all__ = ["Answer", "Lacon"]
+__all__ = ["Answer", "Lacon", "PebbleContextError"]
 __version__ = "0.1.0"

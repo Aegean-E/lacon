@@ -6,20 +6,44 @@
 ---
 
 ## 📊 Codebase Metrics
-- **Total Python Modules**: `19`
-- **Total Classes**: `33`
-- **Total Top-Level Functions**: `28`
-- **Total Class Methods**: `132`
-- **Total Source Lines**: `1960`
+- **Total Python Modules**: `23`
+- **Total Classes**: `38`
+- **Total Top-Level Functions**: `36`
+- **Total Class Methods**: `151`
+- **Total Source Lines**: `2334`
 
 ---
 
 ## 📦 Modules & Exported Symbols
 
+### [`benchmarks/__init__.py`](benchmarks/__init__.py)
+> *Explicit performance benchmarks for Lacon.*
+
+**Size**: `6` lines (`272` bytes)
+
+---
+
+### [`benchmarks/performance.py`](benchmarks/performance.py)
+> *Wall-clock benchmarks, run explicitly with `python -m unittest benchmarks.performance`.*
+
+**Size**: `89` lines (`3741` bytes)
+
+**Classes:**
+- `class PerformanceTests` - *Speed budgets: every operation must complete within its budget.*
+  - Method `.test_ask_cold_speed()` - *A single ask on 200 sentences completes within 100ms cold.*
+  - Method `.test_ask_warm_speed()` - *A repeated ask on same context completes within 5ms warm.*
+  - Method `.test_alphabet_skeleton_speed()` - *skeleton on 1000 words completes within 200ms.*
+  - Method `.test_lexicon_speed()` - *lexicon on 1000 words completes within 100ms.*
+  - Method `.test_thinker_rank_speed()` - *Thinker.rank on 500 sentences completes within 600ms.*
+  - Method `.test_partition_speed()` - *partition on 10000 items completes within 10ms.*
+  - Method `.test_full_pipeline_100_asks()` - *100 asks on 100-sentence context completes within 2s.*
+
+---
+
 ### [`lacon/__init__.py`](lacon/__init__.py)
 > *Lacon: an AI that thinks in as few letters as possible, recursively over a long context.*
 
-**Size**: `10` lines (`329` bytes)
+**Size**: `11` lines (`398` bytes)
 
 ---
 
@@ -61,7 +85,7 @@
 ### [`lacon/cli.py`](lacon/cli.py)
 > *Lacon's command line: ask one question, or run the built-in demo.*
 
-**Size**: `203` lines (`9291` bytes)
+**Size**: `229` lines (`10767` bytes)
 
 **Classes:**
 - `class CliError` - *A usage or file failure, rendered with the same What/Why/Fix shape as an answer refusal.*
@@ -72,6 +96,7 @@
 - `def _report_internal(error, stderr)` - *Last-resort report: a host failure is still explained, and never shown as a traceback.*
 - `def _dispatch(arguments, stdin, stdout, stderr)` - *Route the arguments to `ask` or `demo`.*
 - `def _options(arguments)` - *Parse the flags of one command into a plain option mapping.*
+- `def _context_format(value, source)` - *Validate the reader, defaulting a `.peb` file to the Pebble adapter.*
 - `def _budget(value)` - *The letter ceiling as a positive integer, or a usage error.*
 - `def _context(options, stdin)` - *The context text: from a file, from standard input for `-`, or empty when unnamed.*
 - `def _run(question, context, options, stdout, stderr)` - *Answer one question and report it in the requested form.*
@@ -95,10 +120,30 @@
 
 ---
 
+### [`lacon/pebble_context.py`](lacon/pebble_context.py)
+> *Read Pebble source as evidence for Lacon, using Pebble's own lexer and parser.*
+
+**Size**: `140` lines (`5616` bytes)
+
+**Classes:**
+- `class _PebbleApi` - *The handful of Pebble entry points this adapter needs, loaded lazily.*
+- `class PebbleContextError` - *A Pebble context that could not be read, with the What/Why/Fix report.*
+  - Method `.__init__(message, why, fix)`
+
+**Functions:**
+- `def pebble_to_sentences(source, root)` - *The evidence sentences in a Pebble program, in source order.*
+- `def _load_pebble(root)` - *Import Pebble normally, then from an explicit or sibling checkout.*
+- `def _import_pebble()` - *The real import, kept separate so a missing package is recoverable.*
+- `def _candidate_root(root)` - *An explicit checkout, or the sibling projects/pebble directory.*
+- `def _comment_sentences(source)` - *Every meaningful ``#`` comment, so prose in a program stays evidence.*
+- `def _statement_sentences(statements, nodes)` - *Declarations, loops and function signatures as searchable sentences.*
+
+---
+
 ### [`lacon/rlm.py`](lacon/rlm.py)
 > *Lacon's recursive language model: one question answered by splitting context and recurring.*
 
-**Size**: `472` lines (`17242` bytes)
+**Size**: `522` lines (`20002` bytes)
 
 **Classes:**
 - `class TreeNode` - *A node in the recursion tree for trajectory tracking.*
@@ -109,6 +154,8 @@
   - Method `.ask(question, context, budget, *, max_total_chars, context_format)` - *Answer `question` from `context`, splitting it recursively to respect `budget`.*
   - Method `._prepare_evidence(question, evidence)` - *Prepare evidence with cached payloads and fresh scores: (orig_idx, sentence, payload, score).*
   - Method `._span(budget)` - *How many sentences a node holds in mind: a budget-eighth, but never fewer than two.*
+  - Method `._remaining(tree_chars_limit)` - *Characters left under the tree-wide cap, or None when the cap is off.*
+  - Method `._fit(thoughts, budget, asked, remaining)` - *The most valuable part of a thought list that fits the remaining tree cap.*
   - Method `._solve(question, evidence, budget, depth, words, tree_chars_limit, parent_id)` - *Answer at this node: directly when the context fits in mind, by recursion when not.*
   - Method `._merge(question, children, budget, asked)` - *Copy the child that answers best, marked as a merge of the children that produced it.*
   - Method `.export_tree_json(answer)` - *Export the recursion tree as JSONL (one line per node).*
@@ -261,7 +308,7 @@
 ### [`tests/test_formats.py`](tests/test_formats.py)
 > *Format parser tests: CSV and JSON contexts become sentences the engine can read.*
 
-**Size**: `80` lines (`3193` bytes)
+**Size**: `105` lines (`4383` bytes)
 
 **Classes:**
 - `class ParserTests` - *Each format keeps the values a question can match.*
@@ -276,26 +323,50 @@
   - Method `.test_text_format_reads_json_literally()`
 - `class TreeBudgetTests` - *A tree-wide budget stops expansion instead of visiting every node.*
   - Method `.test_a_tree_budget_reduces_the_visited_nodes()`
+  - Method `.test_the_tree_budget_is_a_hard_cap_at_every_ceiling()`
+  - Method `.test_a_generous_cap_matches_the_unlimited_tree()`
+  - Method `.test_a_negative_tree_budget_is_refused()`
+
+---
+
+### [`tests/test_pebble_context.py`](tests/test_pebble_context.py)
+> *Pebble context tests: Pebble's parser becomes evidence for the Lacon engine.*
+
+**Size**: `124` lines (`5017` bytes)
+
+**Classes:**
+- `class ConversionTests` - *Declarations and comments survive the trip through Pebble's AST.*
+  - Method `.test_functions_variables_and_comments_become_sentences()`
+  - Method `.test_parse_context_uses_the_same_reader()`
+  - Method `.test_an_unknown_format_is_refused()`
+  - Method `.test_a_broken_program_carries_a_why_and_a_fix()`
+  - Method `.test_a_missing_checkout_is_reported_as_a_why_and_a_fix()`
+- `class AskTests` - *Lacon answers from Pebble source through the public API.*
+  - Method `.test_a_function_question_is_answered()`
+  - Method `.test_a_comment_question_is_answered_from_the_comment()`
+- `class CliTests` - *The command line infers Pebble from `.peb` and reports bad contexts.*
+  - Method `.test_a_peb_file_extension_selects_the_pebble_reader()`
+  - Method `.test_the_format_can_be_forced_for_standard_input()`
+  - Method `.test_a_broken_pebble_context_exits_two_with_a_report()`
+  - Method `.test_an_unknown_context_format_is_a_usage_error()`
+  - Method `.test_demo_rejects_a_context_format()`
+
+**Functions:**
+- `def run_cli(argv, stdin_text)` - *Run main() over in-memory streams; returns (exit code, stdout, stderr).*
+- `def write_source(text, suffix)` - *A temporary Pebble file on disk, cleaned up by the calling test.*
 
 ---
 
 ### [`tests/test_performance.py`](tests/test_performance.py)
-> *Performance benchmark tests: ensure speed budgets are met and measure regressions.*
+> *Behaviour and edge-case tests; wall-clock benchmarks live in benchmarks/performance.py.*
 
-**Size**: `223` lines (`9191` bytes)
+**Size**: `136` lines (`5275` bytes)
 
 **Classes:**
-- `class PerformanceTests` - *Speed budgets: every operation must complete within its budget.*
-  - Method `.test_ask_cold_speed()` - *A single ask on 200 sentences completes within 100ms cold.*
-  - Method `.test_ask_warm_speed()` - *A repeated ask on same context completes within 5ms warm.*
-  - Method `.test_alphabet_skeleton_speed()` - *skeleton on 1000 words completes within 200ms.*
-  - Method `.test_lexicon_speed()` - *lexicon on 1000 words completes within 100ms.*
-  - Method `.test_thinker_rank_speed()` - *Thinker.rank on 500 sentences completes within 600ms.*
-  - Method `.test_partition_speed()` - *partition on 10000 items completes within 10ms.*
-  - Method `.test_full_pipeline_100_asks()` - *100 asks on 100-sentence context completes within 2s.*
-- `class CodeUnderstandingTests` - *Tests for code understanding: functions, classes, identifiers.*
+- `class CodeUnderstandingTests` - *Python code contexts are extracted by the AST reader and answered.*
   - Method `.setUp()`
-  - Method `.test_code_context_parsed()` - *Code context is now parsed with AST and answers code questions.*
+  - Method `.test_code_context_parsed()` - *Code context is parsed with AST and answers code questions.*
+  - Method `.test_snake_case_in_question()` - *snake_case identifiers in the question are matched from code.*
 - `class EdgeCaseTests` - *Edge cases and stress tests.*
   - Method `.test_very_long_context()` - *Context with 1000 sentences handled within depth cap.*
   - Method `.test_many_questions_same_context()` - *Many different questions on same context reuse cache.*
@@ -309,9 +380,6 @@
   - Method `.test_skeleton_preserves_digits()` - *skeleton preserves digits (digits kept adjacent to letters).*
   - Method `.test_content_words_filters_stopwords()` - *content_words filters common stopwords.*
   - Method `.test_lexicon_picks_shortest()` - *lexicon picks shortest spelling for same skeleton.*
-
-**Functions:**
-- `def test_snake_case_in_question(self)` - *snake_case identifiers in question are now parsed from code.*
 
 ---
 

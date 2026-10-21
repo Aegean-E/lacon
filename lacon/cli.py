@@ -11,9 +11,11 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import __version__
+from .pebble_context import PebbleContextError
 from .rlm import Answer, Lacon
 
-HELP = """usage: lacon ask "QUESTION" [--context FILE] [--budget N] [--script] [--json] [--trace] [--quiet]
+HELP = """usage: lacon ask "QUESTION" [--context FILE] [--context-format FORMAT] [--budget N]
+                    [--script] [--json] [--trace] [--quiet]
        lacon demo [--budget N]
 
 Lacon answers a question from a context, thinking in as few letters as possible: each thought is
@@ -27,6 +29,8 @@ positional arguments:
 
 options:
   --context FILE     the context to answer from; `-` reads it from standard input
+  --context-format FORMAT
+                     auto, text, csv, json or pebble (default: auto, and .peb means pebble)
   --budget N         the letter ceiling for one thought (default 64, at least 1)
   --script           print the letters Lacon thought in, instead of the answer
   --json             print answer, script, depth, nodes and budget as one JSON object
@@ -65,7 +69,7 @@ def main(argv=None, stdin=None, stdout=None, stderr=None) -> int:
     stderr = sys.stderr if stderr is None else stderr
     try:
         return _dispatch(arguments, stdin, stdout, stderr)
-    except CliError as error:
+    except (CliError, PebbleContextError) as error:
         stderr.write(f"lacon: error: {error.message}\n"
                      f"  Why: {error.why}\n"
                      f"  Fix: {error.fix}\n")
@@ -95,7 +99,13 @@ def _dispatch(arguments: List[str], stdin, stdout, stderr) -> int:
         stdout.write(f"lacon {__version__}\n")
         return 0
     if arguments[0] == "demo":
-        return _run(DEMO_QUESTION, DEMO_CONTEXT, _options(arguments[1:]), stdout, stderr)
+        if "--context-format" in arguments[1:]:
+            raise CliError("--context-format applies to 'ask'",
+                           "demo always answers its built-in example and has no context file",
+                           "run lacon ask ... --context-format pebble instead")
+        options = _options(arguments[1:])
+        options["context_format"] = "auto"
+        return _run(DEMO_QUESTION, DEMO_CONTEXT, options, stdout, stderr)
     if arguments[0] == "ask":
         rest = arguments[1:]
         if not rest or rest[0].startswith("-"):
@@ -111,19 +121,21 @@ def _dispatch(arguments: List[str], stdin, stdout, stderr) -> int:
 
 def _options(arguments: List[str]) -> dict:
     """Parse the flags of one command into a plain option mapping."""
-    options = {"context": None, "budget": 64, "script": False, "json": False, "trace": False,
-               "quiet": False}
+    options = {"context": None, "context_format": "auto", "budget": 64, "script": False,
+               "json": False, "trace": False, "quiet": False}
     index = 0
     while index < len(arguments):
         flag = arguments[index]
         if flag in ("--script", "--json", "--trace", "--quiet"):
             options[flag[2:]] = True
-        elif flag in ("--context", "--budget"):
+        elif flag in ("--context", "--context-format", "--budget"):
             if index + 1 >= len(arguments):
+                example = {"--context": "FILE", "--context-format": "pebble",
+                           "--budget": "64"}[flag]
                 raise CliError(f"option '{flag}' needs a value",
                                f"'{flag}' is followed by its value, and nothing followed",
-                               f'write {flag} {"FILE" if flag == "--context" else "64"}')
-            options[flag[2:]] = arguments[index + 1]
+                               f"write {flag} {example}")
+            options[flag[2:].replace("-", "_")] = arguments[index + 1]
             index += 1
         else:
             raise CliError(f"unknown option '{flag}'",
@@ -131,7 +143,20 @@ def _options(arguments: List[str]) -> dict:
                            "run lacon --help to see the available options")
         index += 1
     options["budget"] = _budget(options["budget"])
+    options["context_format"] = _context_format(options["context_format"], options["context"])
     return options
+
+
+def _context_format(value: str, source) -> str:
+    """Validate the reader, defaulting a `.peb` file to the Pebble adapter."""
+    formats = ("auto", "text", "csv", "json", "pebble")
+    if value not in formats:
+        raise CliError(f"--context-format '{value}' is not a reader",
+                       "the context can be auto, text, csv, json or pebble",
+                       "write --context-format pebble for a .peb file")
+    if value == "auto" and source not in (None, "-") and source.lower().endswith(".peb"):
+        return "pebble"
+    return value
 
 
 def _budget(value) -> int:
@@ -174,7 +199,8 @@ def _context(options: dict, stdin) -> str:
 
 def _run(question: str, context: str, options: dict, stdout, stderr) -> int:
     """Answer one question and report it in the requested form."""
-    answer = Lacon().ask(question, context, options["budget"])
+    answer = Lacon().ask(question, context, options["budget"],
+                         context_format=options["context_format"])
     if options["json"]:
         if not options["quiet"]:
             stdout.write(json.dumps({"answer": answer.answer, "script": answer.script,

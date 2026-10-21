@@ -1,12 +1,12 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-lacon-inflight-completion",
-    "last_phase": "phase 4",
+    "task_id": "task-lacon-hardening",
+    "last_phase": "phase 3",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1792588955.398002,
-    "completed_at": 1792588967.752875
+    "updated_at": 1792613994.491041,
+    "completed_at": 1792613994.6835177
   },
   "checkpoints": [
     {
@@ -53,6 +53,135 @@
       "status": "completed",
       "timestamp": 1792588967.7528765,
       "timestamp_str": "2026-10-21 16:22:47"
+    },
+    {
+      "task_id": "task-lacon-pebble-adapter",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add an optional Pebble context format to Lacon. Read .peb source through Pebble's own lexer/parser/AST, turn functions, declarations, loops and comments into evidence sentences, expose context_format=pebble and --context-format, infer it from a .peb file extension, keep the core stdlib-only, add ADR-003, tests and README updates, then run Phase 4 gates.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613179.5037975,
+      "timestamp_str": "2026-10-21 23:06:19",
+      "impact_assessment": {
+        "why": "The two AIKit projects are complementary at the boundary: Pebble has the precise AST and Lacon has budgeted evidence selection. Lacon's current code understanding is Python-only and shallow, while Pebble's parser can supply exact declarations and positions; a narrow adapter adds real structural Q&A without merging the two engines.",
+        "benefits": "Lacon gains a second, precise code context; Pebble gains a real consumer; both remain independently testable. Users can ask questions about .peb files offline with an auditable thought script, and Lacon's core stays dependency-free.",
+        "risks": "contract: a new context_format value, CLI flag, and extension inference change the public surface; dependency: an optional runtime import of the sibling Pebble project, with a clear failure when unavailable; concurrency: none, the adapter is pure and the existing engine is single-threaded; state: no persistence changes, but the module cache and lazy import must not leak a half-initialized package.",
+        "mitigation": "Record the contract in ADR-003 before code; make the import lazy and optional; validate formats and surface parse failures as What/Why/Fix with CLI exit 2; add unit tests for conversion, inference, malformed source and the missing-dependency message; run python -m unittest discover and python aikit.py check lacon --no-push."
+      }
+    },
+    {
+      "task_id": "task-lacon-pebble-adapter",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[1/3] complete: added lacon/pebble_context.py with a lazy Pebble import, sibling-checkout discovery, comment/declaration/loop extraction and What/Why/Fix errors; wired context_format=pebble through parse_context and Lacon.ask plus --context-format with .peb inference; expansion now includes the evidence lexicon.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613420.2563305,
+      "timestamp_str": "2026-10-21 23:10:20"
+    },
+    {
+      "task_id": "task-lacon-pebble-adapter",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] complete: 11 adapter tests in tests/test_pebble_context.py cover conversion, parse_context, API answers, CLI inference, forced standard input, malformed source and missing checkout; ADR-003 records the optional boundary; README tree, usage, flags and boundaries updated; codebase map regenerated.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613420.4166336,
+      "timestamp_str": "2026-10-21 23:10:20"
+    },
+    {
+      "task_id": "task-lacon-pebble-adapter",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[3/3] complete: Phase 4 gates 4/4 (test 117 passing, hygiene, guidelines/map, secrets); checklists: passed. Uncommitted changes remain: 6 modified and 2 untracked files; delivery is intentionally not pushed.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613428.5498412,
+      "timestamp_str": "2026-10-21 23:10:28"
+    },
+    {
+      "task_id": "task-lacon-pebble-adapter",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-lacon-pebble-adapter' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792613431.097177,
+      "timestamp_str": "2026-10-21 23:10:31"
+    },
+    {
+      "task_id": "task-lacon-pebble-adapter",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[review] Second pass fixed the demo flag edge case and added its regression test; 118 tests pass and gates are 4/4. One timing test (tests/test_performance.py::test_lexicon_speed) flaked at 112.9ms when run concurrently with another process, then passed alone; it remains host-sensitive and is out of this task's scope. checklists: passed.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613556.4050975,
+      "timestamp_str": "2026-10-21 23:12:36"
+    },
+    {
+      "task_id": "task-lacon-pebble-adapter",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-lacon-pebble-adapter' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792613556.6076293,
+      "timestamp_str": "2026-10-21 23:12:36"
+    },
+    {
+      "task_id": "task-lacon-hardening",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: make max_total_chars a hard aggregate cap instead of a pre-node stop; add a regression test that asserts tree_chars <= limit at several ceilings; move host-sensitive wall-clock benchmarks out of the default unittest gate into benchmarks/performance.py; fix the uncollected snake_case test; record ADR-004 (hard cap) and ADR-005 (benchmark placement); refresh README and map; run Phase 4.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613674.1373496,
+      "timestamp_str": "2026-10-21 23:14:34",
+      "impact_assessment": {
+        "why": "Two defects remain from the independent review: a documented tree-wide budget can be exceeded by the root node, and a wall-clock performance test failed the gate once under concurrent load while the suite is supposed to be deterministic. Both undermine the claim that a green gate means a trustworthy result.",
+        "benefits": "The budget contract becomes true and testable at the API boundary; the default suite becomes host-independent and faster; the benchmarks remain runnable on demand; the previously uncollected snake_case test becomes part of the regression shield.",
+        "risks": "contract: max_total_chars semantics change from best-effort stop to hard cap, and low ceilings may return an empty unknown script; dependency: none; concurrency: none; state: benchmark files move and test discovery changes, so README and map must stay synchronized.",
+        "mitigation": "Implement a fit-to-remaining helper and reserve one character per ancestor before splitting; test ceilings 0, 1, 8, 50 and a generous limit; keep the benchmarks as an explicit unittest module outside the default test*.py pattern; run the full suite and python aikit.py check lacon --no-push."
+      }
+    },
+    {
+      "task_id": "task-lacon-hardening",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[1/3] complete: max_total_chars is now a hard aggregate cap. _remaining/_fit fit every node to the remaining tree budget, recursion reserves the node budget and a MIN_CHILD floor for each child, and tests cover ceilings 0,1,8,17,24,50,100,200 plus a generous cap matching the unlimited tree and a negative-cap refusal.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613990.9852376,
+      "timestamp_str": "2026-10-21 23:19:50"
+    },
+    {
+      "task_id": "task-lacon-hardening",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] complete: moved the seven wall-clock PerformanceTests to benchmarks/performance.py (not collected by unittest discover), left behavior/edge tests in tests/test_performance.py, collected the previously module-level snake_case test, added ADR-004 and ADR-005, and updated README tree/tests/boundaries and the codebase map.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613991.1527262,
+      "timestamp_str": "2026-10-21 23:19:51"
+    },
+    {
+      "task_id": "task-lacon-hardening",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[3/3] complete: Phase 4 gates 4/4 (test 115 passing in 0.3s, hygiene, guidelines/map, secrets); explicit benchmarks 7/7 pass; hard-cap invariants fuzzed across contexts, formats, budgets and caps; checklists: passed. Changes remain uncommitted and unpushed.",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792613994.491041,
+      "timestamp_str": "2026-10-21 23:19:54"
+    },
+    {
+      "task_id": "task-lacon-hardening",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-lacon-hardening' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792613994.6835196,
+      "timestamp_str": "2026-10-21 23:19:54"
     }
   ]
 }

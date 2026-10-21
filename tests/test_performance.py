@@ -1,95 +1,16 @@
-"""Performance benchmark tests: ensure speed budgets are met and measure regressions."""
+"""Behaviour and edge-case tests; wall-clock benchmarks live in benchmarks/performance.py."""
 
-import time
+import random
 import unittest
 
+from lacon.alphabet import content_words, expand, lexicon, skeleton
 from lacon.budget import Budget
-from lacon.rlm import Lacon, partition, sentences
-from lacon.alphabet import skeleton, lexicon, content_words, expand
-from lacon.thinker import Thinker
-from lacon.thought import Thought, render, parse, answer_text
-
-
-class PerformanceTests(unittest.TestCase):
-    """Speed budgets: every operation must complete within its budget."""
-
-    def test_ask_cold_speed(self) -> None:
-        """A single ask on 200 sentences completes within 100ms cold."""
-        l = Lacon()
-        l._lexicon_cache.clear()
-        l._payload_cache.clear()
-        ctx = " ".join([f"Sentence {i} with some content words here." for i in range(200)])
-        start = time.perf_counter()
-        l.ask("What is sentence 100?", ctx, 64)
-        elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 0.1, f"Cold ask took {elapsed*1000:.1f}ms, budget 100ms")
-
-    def test_ask_warm_speed(self) -> None:
-        """A repeated ask on same context completes within 5ms warm."""
-        l = Lacon()
-        ctx = " ".join([f"Sentence {i} with some content words here." for i in range(200)])
-        l.ask("What is sentence 100?", ctx, 64)  # warm up
-        start = time.perf_counter()
-        l.ask("What is sentence 100?", ctx, 64)
-        elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 0.005, f"Warm ask took {elapsed*1000:.1f}ms, budget 5ms")
-
-    def test_alphabet_skeleton_speed(self) -> None:
-        """skeleton on 1000 words completes within 200ms."""
-        words = " ".join([f"word{i}" for i in range(1000)])
-        start = time.perf_counter()
-        for _ in range(100):
-            skeleton(words)
-        elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 0.2, f"skeleton took {elapsed*1000:.1f}ms, budget 200ms")
-
-    def test_lexicon_speed(self) -> None:
-        """lexicon on 1000 words completes within 100ms."""
-        words = " ".join([f"word{i}" for i in range(1000)])
-        start = time.perf_counter()
-        for _ in range(100):
-            lexicon(words)
-        elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 0.1, f"lexicon took {elapsed*1000:.1f}ms, budget 100ms")
-
-    def test_thinker_rank_speed(self) -> None:
-        """Thinker.rank on 500 sentences completes within 600ms."""
-        t = Thinker()
-        question = "What is the answer?"
-        evidence = [f"Sentence {i} with some relevant content." for i in range(500)]
-        start = time.perf_counter()
-        for _ in range(50):
-            t.rank(question, evidence)
-        elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 0.6, f"rank took {elapsed*1000:.1f}ms, budget 600ms")
-
-    def test_partition_speed(self) -> None:
-        """partition on 10000 items completes within 10ms."""
-        items = list(range(10000))
-        start = time.perf_counter()
-        for _ in range(100):
-            partition(items, 2)
-        elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 0.01, f"partition took {elapsed*1000:.1f}ms, budget 10ms")
-
-    def test_full_pipeline_100_asks(self) -> None:
-        """100 asks on 100-sentence context completes within 2s."""
-        l = Lacon()
-        ctx = " ".join([f"Sentence {i} about bridges and rust." for i in range(100)])
-        start = time.perf_counter()
-        for i in range(100):
-            l.ask(f"What about sentence {i}?", ctx, 64)
-        elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 2.0, f"100 asks took {elapsed*1000:.1f}ms, budget 2000ms")
+from lacon.rlm import Lacon
+from lacon.thought import Thought, answer_text, parse, render
 
 
 class CodeUnderstandingTests(unittest.TestCase):
-    """Tests for code understanding: functions, classes, identifiers.
-    
-    Note: Current engine is designed for natural language sentences.
-    Code understanding requires preprocessing (function/class extraction)
-    which is a future improvement. These tests document expected behavior.
-    """
+    """Python code contexts are extracted by the AST reader and answered."""
 
     def setUp(self):
         self.l = Lacon()
@@ -113,17 +34,15 @@ class Calculator:
 '''
 
     def test_code_context_parsed(self) -> None:
-        """Code context is now parsed with AST and answers code questions."""
+        """Code context is parsed with AST and answers code questions."""
         answer = self.l.ask("What does fibonacci do?", self.code_ctx, 64)
-        # Now code is parsed with AST and can answer
         self.assertTrue(answer.known)
         self.assertIn("fibonacci", answer.answer.lower())
 
-def test_snake_case_in_question(self) -> None:
-        """snake_case identifiers in question are now parsed from code."""
+    def test_snake_case_in_question(self) -> None:
+        """snake_case identifiers in the question are matched from code."""
         ctx = "def calculate_total_price(items): return sum(items)"
         answer = self.l.ask("What does calculate_total_price do?", ctx, 64)
-        # Code is now parsed with AST
         self.assertTrue(answer.known)
         self.assertIn("calculate", answer.answer.lower())
 
@@ -177,11 +96,10 @@ class EdgeCaseTests(unittest.TestCase):
 
     def test_script_round_trip_many(self) -> None:
         """Many random scripts parse and render correctly."""
-        from lacon.thought import parse, render, Thought
-        import random
         glyphs = ["?", "+", "-", "<", ">", "*", "=", "!"]
         for _ in range(1000):
-            thoughts = [Thought(random.choice(glyphs), "abc.def", random.randint(1, 5) if random.random() > 0.5 else None)
+            thoughts = [Thought(random.choice(glyphs), "abc.def",
+                                random.randint(1, 5) if random.random() > 0.5 else None)
                         for _ in range(random.randint(1, 10))]
             script = render(thoughts)
             parsed = parse(script)
@@ -189,13 +107,9 @@ class EdgeCaseTests(unittest.TestCase):
 
     def test_answer_text_consistency(self) -> None:
         """answer_text returns consistent results."""
-        from lacon.thought import answer_text, Thought
-        from lacon.alphabet import lexicon
         thoughts = [Thought("<", "abc.def", 1), Thought(">", ""), Thought("!", "ghi.jkl")]
         words = lexicon("abc def ghi jkl")
-        ans1 = answer_text(thoughts, words)
-        ans2 = answer_text(thoughts, words)
-        self.assertEqual(ans1, ans2)
+        self.assertEqual(answer_text(thoughts, words), answer_text(thoughts, words))
 
     def test_expand_unknown_returns_original(self) -> None:
         """expand returns the skeleton when word unknown."""
@@ -203,7 +117,6 @@ class EdgeCaseTests(unittest.TestCase):
 
     def test_skeleton_preserves_digits(self) -> None:
         """skeleton preserves digits (digits kept adjacent to letters)."""
-        # version2.0.1 -> version2, 0, 1 -> vrsn2, 0, 1 -> vrsn2.0.1
         self.assertEqual(skeleton("version2.0.1"), "vrsn2.0.1")
 
     def test_content_words_filters_stopwords(self) -> None:
