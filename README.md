@@ -1,5 +1,7 @@
 # lacon
 
+[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/Aegean-E/AIKit)
+
 An AI that thinks in as few letters as possible, recursively over a long context. Everything is in
 this project: the alphabet, the budget, the thinker and the recursive engine. No network, no API
 key, no model weights. The core is standard library only; an optional adapter reads Pebble source
