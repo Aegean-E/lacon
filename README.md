@@ -46,6 +46,7 @@ lacon/
 ├── .gitignore
 ├── LICENSE
 ├── README.md
+├── COMMERCIAL.md
 ├── examples/
 │   └── notes.txt             <- the context the README answers its question from
 ├── lacon/
