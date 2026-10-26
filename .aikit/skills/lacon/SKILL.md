@@ -104,7 +104,7 @@ lacon/
 ├── .aikit/skills/lacon/
 │   └── SKILL.md              <- this file
 ├── .gitignore
-├── LICENSE (AGPL-3.0)
+├── LICENSE (AL-1.1)
 ├── README.md
 ├── examples/notes.txt
 ├── lacon/
@@ -132,4 +132,4 @@ When adopting lacon into an AIKit workspace or another project:
 
 ## 📜 License
 
-AGPL-3.0 — see LICENSE. If integrating into a proprietary codebase, ensure license compatibility.
+Aegean License 1.1 (AL-1.1), free for personal use — see LICENSE. Commercial or organizational use needs the Aegean Commercial License 1.0 (ACL-1.0); see COMMERCIAL.md.

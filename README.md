@@ -1,6 +1,6 @@
 # lacon
 
-[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/Aegean-E/AIKit)
+[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
 
 An AI that thinks in as few letters as possible, recursively over a long context. Everything is in
 this project: the alphabet, the budget, the thinker and the recursive engine. No network, no API
@@ -45,6 +45,8 @@ lacon/
 │           └── SKILL.md      <- AIKit adoption skill
 ├── .gitignore
 ├── LICENSE
+├── LICENSES/                 <- REUSE license texts
+├── REUSE.toml                <- Machine-readable SPDX metadata
 ├── README.md
 ├── COMMERCIAL.md
 ├── examples/
@@ -233,3 +235,9 @@ context readers, the hard tree-wide budget, and the command line's exit codes.
   standard-library-only when the format is unused (ADR-003).
 - Adding a user-supplied model, claims and contrasts beyond what an answer needs, and streaming are
   non-goals of v1 (ADR-001).
+
+> **License history:** versions up to and including `v0.1.0-agpl` remain available under GNU AGPL-3.0.
+
+## 📜 License
+
+Free for personal use under the Aegean License 1.1 (AL-1.1); see [LICENSE](LICENSE). Any commercial use needs the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).

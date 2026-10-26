@@ -123,3 +123,9 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
   longer a hard commit gate, so a deliberate benchmark run is required when performance changes.
   This ADR names the weakened/relocated test `tests/test_performance.py::test_lexicon_speed` and
   records the user's approval for the move.
+
+## Licensing migration (v0.1.0-agpl)
+
+- New versions use the Aegean License 1.1 (AL-1.1); versions up to and including `v0.1.0-agpl` remain under GNU AGPL-3.0.
+- Rights holder: AegeanWorks; commercial use under ACL-1.0.
+- Counsel review of the 1.1 texts remains pending.
