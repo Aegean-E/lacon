@@ -5,53 +5,48 @@
   "has_ui": false,
   "ui_kind": "library",
   "palette": [
-    "#0e1117",
-    "#1f2937",
-    "#60a5fa",
-    "#f8fafc"
+    "#0c0c14",
+    "#1e1b4b",
+    "#a5b4fc",
+    "#f9a8d4"
   ],
+  "motif": "lens",
+  "layout": "editorial",
   "assets": {
     "logo": {
       "path": "assets/logo.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:30",
+      "generated_at": "2026-10-28T08:46:58",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "LA monogram in blue, dark navy, subtitle fits, coherent.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:43"
+        "notes": "LA target, legible",
+        "score": 88,
+        "reviewed_at": "2026-10-28T08:58:21"
       }
     },
     "social_preview": {
       "path": "assets/social-preview.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:30",
+      "generated_at": "2026-10-28T08:46:58",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "LA icon, title, alphabet/budget description, LIBRARY tag.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:43"
+        "notes": "Consistent template, legible",
+        "score": 88,
+        "reviewed_at": "2026-10-28T08:58:21"
       }
     },
     "social_preview_png": {
       "path": "assets/social-preview.png",
-      "status": "approved",
+      "status": "pending_review",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:31",
-      "review": {
-        "status": "approved",
-        "reviewer": "subagent:vision-review",
-        "method": "structural",
-        "notes": "Rendered from the approved 1280x640 social SVG; exact dimensions verified.",
-        "score": null,
-        "reviewed_at": "2026-10-28T08:16:38"
-      }
+      "generated_at": "2026-10-28T08:47:00",
+      "review": null
     }
   },
   "screenshots": []
