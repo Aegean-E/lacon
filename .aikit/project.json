@@ -11,6 +11,7 @@
   "ui_source": "detected",
   "topics": [
     "aikit",
+    "aikit-integrated",
     "source-available",
     "aegean-license",
     "commercial-license",
@@ -28,8 +29,7 @@
     "command-line-tool",
     "llm",
     "machine-learning",
-    "offline-first",
-    "artificial-intelligence"
+    "offline-first"
   ],
   "topics_source": "ai:kilo:2026-10-27",
   "topics_reviewed_at": "2026-10-28",
