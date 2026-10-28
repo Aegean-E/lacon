@@ -11,6 +11,9 @@
   "ui_source": "detected",
   "topics": [
     "aikit",
+    "source-available",
+    "aegean-license",
+    "commercial-license",
     "python",
     "recursive-language-model",
     "rlm",
@@ -19,7 +22,6 @@
     "zero-dependencies",
     "compact-reasoning",
     "vowelless",
-    "source-available",
     "aegeanworks",
     "ai",
     "cli",
@@ -27,9 +29,7 @@
     "llm",
     "machine-learning",
     "offline-first",
-    "software",
-    "artificial-intelligence",
-    "language-model"
+    "artificial-intelligence"
   ],
   "topics_source": "ai:kilo:2026-10-27",
   "topics_reviewed_at": "2026-10-28",
@@ -52,5 +52,10 @@
   "topics_choice_round3": [
     "artificial-intelligence",
     "language-model"
+  ],
+  "license_topics": [
+    "source-available",
+    "aegean-license",
+    "commercial-license"
   ]
 }
