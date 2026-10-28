@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "name": "lacon",
+  "repo": "Lacon",
+  "has_ui": false,
+  "ui_kind": "library",
+  "palette": [
+    "#0e1117",
+    "#1f2937",
+    "#60a5fa",
+    "#f8fafc"
+  ],
+  "assets": {
+    "logo": {
+      "path": "assets/logo.svg",
+      "status": "approved",
+      "commit": "",
+      "generated_at": "2026-10-28T08:02:30",
+      "review": {
+        "status": "approved",
+        "reviewer": "subagent:vision-review",
+        "method": "vision",
+        "notes": "LA monogram in blue, dark navy, subtitle fits, coherent.",
+        "score": 93,
+        "reviewed_at": "2026-10-28T08:10:43"
+      }
+    },
+    "social_preview": {
+      "path": "assets/social-preview.svg",
+      "status": "approved",
+      "commit": "",
+      "generated_at": "2026-10-28T08:02:30",
+      "review": {
+        "status": "approved",
+        "reviewer": "subagent:vision-review",
+        "method": "vision",
+        "notes": "LA icon, title, alphabet/budget description, LIBRARY tag.",
+        "score": 93,
+        "reviewed_at": "2026-10-28T08:10:43"
+      }
+    },
+    "social_preview_png": {
+      "path": "assets/social-preview.png",
+      "status": "pending_review",
+      "commit": "",
+      "generated_at": "2026-10-28T08:02:31",
+      "review": null
+    }
+  },
+  "screenshots": []
+}
