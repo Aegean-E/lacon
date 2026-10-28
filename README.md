@@ -1,7 +1,7 @@
 # lacon
 
 <!-- aegean:media:start -->
-<p align="center"><img src="assets/logo.png" alt="Lacon logo" width="96" height="96"></p>
+<p align="center"><img src="assets/logo.jpg" alt="Lacon logo" width="96" height="96"></p>
 <p align="center"><img src="assets/social-preview.png" alt="Lacon social preview" width="100%"></p>
 <!-- aegean:media:end -->
 
